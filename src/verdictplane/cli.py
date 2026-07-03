@@ -88,6 +88,33 @@ def _cmd_log(args, ledger: Ledger) -> int:
     return 0
 
 
+def _anchor_key() -> bytes | None:
+    """Optional HMAC key for signed anchors, from VERDICTPLANE_ANCHOR_KEY (hex)."""
+    hexkey = os.environ.get("VERDICTPLANE_ANCHOR_KEY", "").strip()
+    return bytes.fromhex(hexkey) if hexkey else None
+
+
+def _cmd_anchor(args, ledger: Ledger) -> int:
+    cp = ledger.checkpoint(key=_anchor_key())
+    text = json.dumps(cp, sort_keys=True)
+    if args.out:
+        with open(args.out, "w") as f:
+            f.write(text + "\n")
+        print(f"anchored {cp['count']} entries -> {args.out} "
+              f"(head {cp['head'][:16]}{', signed' if 'hmac' in cp else ''})")
+    else:
+        print(text)
+    return 0
+
+
+def _cmd_verify_anchor(args, ledger: Ledger) -> int:
+    with open(args.anchor) as f:
+        anchor = json.load(f)
+    ok, reason = ledger.verify_extends(anchor, key=_anchor_key())
+    print(f"{'OK' if ok else 'FAIL'}: {reason}")
+    return 0 if ok else 1
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="verdictplane", description=__doc__)
     parser.add_argument("--ledger", default=os.environ.get("VERDICTPLANE_LEDGER", "artifacts/ledger.jsonl"))
@@ -103,6 +130,12 @@ def main(argv=None) -> int:
         p.add_argument("--by", default=os.environ.get("USER", "unknown"))
     sub.add_parser("verify", help="verify the ledger hash chain")
     sub.add_parser("head", help="print the ledger head hash (anchor it externally)")
+    p_anchor = sub.add_parser("anchor",
+                              help="write a (optionally signed) checkpoint to anchor externally")
+    p_anchor.add_argument("--out", default=None, help="file to write (default: stdout)")
+    p_va = sub.add_parser("verify-anchor",
+                          help="verify the ledger is an append-only extension of an anchor")
+    p_va.add_argument("anchor", help="path to a checkpoint file written by `anchor`")
     p_log = sub.add_parser("log", help="query provenance records")
     p_log.add_argument("--tool", default=None, help="glob filter on tool name")
     p_log.add_argument("--outcome", default=None,
@@ -124,6 +157,10 @@ def main(argv=None) -> int:
     if args.command == "head":
         print(ledger.head())
         return 0
+    if args.command == "anchor":
+        return _cmd_anchor(args, ledger)
+    if args.command == "verify-anchor":
+        return _cmd_verify_anchor(args, ledger)
     if args.command == "log":
         return _cmd_log(args, ledger)
     return 2  # unreachable: argparse enforces the command set

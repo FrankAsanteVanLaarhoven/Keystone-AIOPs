@@ -19,7 +19,7 @@ NON_ENFORCEMENT = {"advisory.py", "cli.py"}
 ALLOWED_IMPORTS = {
     # stdlib, deterministic, no network
     "__future__", "collections", "contextvars", "dataclasses", "enum", "fnmatch",
-    "functools", "hashlib", "inspect", "io", "json", "os", "pathlib", "re",
+    "functools", "hashlib", "hmac", "inspect", "io", "json", "os", "pathlib", "re",
     "threading", "time", "typing", "uuid",
     # declared schema/config deps (no network)
     "pydantic", "yaml",

@@ -20,7 +20,8 @@ pre-execution control.**
 - **Default-deny posture.** Unmatched actions require human approval. Timeouts
   deny. A broken advisory component changes nothing.
 - **Provenance by default.** No governed action runs un-recorded; any
-  mutation of history is detected at the exact line.
+  mutation of history is detected at the exact line, and tail truncation or
+  rollback is caught by verifying against a signed, externally anchored checkpoint.
 
 Measured, not claimed (`make bench`, full method in [docs/BENCHMARK.md](docs/BENCHMARK.md)):
 
@@ -101,6 +102,8 @@ Terminal 2 — you are the human in the loop:
 .venv/bin/verdictplane approve <token>    # or: verdictplane deny <token>
 .venv/bin/verdictplane log                # the tamper-evident audit trail
 .venv/bin/verdictplane verify             # walk the hash chain
+.venv/bin/verdictplane anchor --out a.json    # signed checkpoint to anchor externally
+.venv/bin/verdictplane verify-anchor a.json   # prove the ledger only ever grew
 ```
 
 That's the whole product: the `send_email` call in terminal 1 physically
@@ -216,7 +219,7 @@ src/verdictplane/     enforcement core: types, provenance, policy, interceptor,
 policies/         example + workload policies
 workloads/        governed DriftGuard promotion, Sentinel rollback
 bench/            make bench -> artifacts/stats.json + docs/BENCHMARK.md
-tests/            187 tests: conformance, tamper, gating, zero-egress, strict-provenance
+tests/            193 tests: conformance, tamper, gating, zero-egress, strict-provenance, anchoring
 deploy/           Dockerfile, network-less sidecar compose, demo agent
 docs/             EVIDENCE.md (audit pack), BENCHMARK.md (measured numbers),
                   EVIDENCE_APPENDIX.md (conditions + reproduction),

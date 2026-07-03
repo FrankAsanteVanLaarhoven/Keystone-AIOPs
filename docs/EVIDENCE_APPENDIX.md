@@ -12,6 +12,7 @@ external auditor can reproduce them. Companion documents:
 | No model / network import in the enforcement path | Static AST allowlist, per module | `make test` (tests/test_enforcement_imports.py) |
 | Zero egress at runtime | Socket kill-switch + empty network namespace | `make test` (tests/test_zero_egress.py) |
 | Tamper detection at exact index | Randomized forgery battery + live forgery demo | `make test` (tests/test_provenance.py) + `make evidence` (E3, E6) |
+| Tail truncation / rollback detected against a signed anchor | `checkpoint()` + `verify_extends()`; HMAC-signed with `VERDICTPLANE_ANCHOR_KEY` | `make test` (tests/test_anchor.py); `verdictplane anchor` / `verify-anchor` |
 | 100% governed-call ledger coverage | Mixed-workload completeness incl. P4 wrappers | `make test` (tests/test_workloads.py) + `make bench` |
 | Strict provenance records allow-intent *before* the side effect (opt-in) | `intent`→`executed` ordering; the `intent` survives a failed call; `intent` is non-terminal so the completeness KPI is unchanged | `VERDICTPLANE_STRICT_PROVENANCE=1`; `make test` (tests/test_interceptor.py strict-provenance cases) |
 | Human gate blocks side effects (approve/deny/timeout) | Live cross-process before/after transcript | `make evidence` (E4); interactive: `examples/quickstart.py` + `verdictplane approve` |
@@ -78,9 +79,11 @@ This runs on every CI push (`.github/workflows/ci.yml`, final step).
 
 ## Known limitations (stated, not hidden)
 
-- **Chain-only verification cannot see tail truncation**; detecting it
-  requires comparing against an externally anchored head hash. Merkle-tree
-  heads / signed checkpoints are roadmap (non-repudiation track).
+- **Chain-only verification cannot see tail truncation on its own** — now closed
+  by `verify_extends()` against a signed `checkpoint()` (head + count + Merkle
+  root) anchored out-of-band (`verdictplane anchor` / `verify-anchor`; HMAC key
+  via `VERDICTPLANE_ANCHOR_KEY`). Privileged deletion of the whole file remains
+  out of scope for a file-backed ledger.
 - **The gate is a polling, single-reviewer mechanism** — correct and
   cross-process, but human-scale; multi-reviewer quorum, SLAs, and
   notifications are roadmap (enterprise workflow track).
@@ -99,7 +102,7 @@ This runs on every CI push (`.github/workflows/ci.yml`, final step).
 git clone https://github.com/FrankAsanteVanLaarhoven/VerdictPlane.git
 cd VerdictPlane
 make setup        # venv + editable install
-make test         # 187 tests: conformance, tamper, gating, zero-egress
+make test         # 193 tests: conformance, tamper, gating, zero-egress, anchoring
 make bench        # six-target scoreboard; nonzero exit on any miss
 make evidence     # regenerates docs/EVIDENCE.md from live runs
 ```

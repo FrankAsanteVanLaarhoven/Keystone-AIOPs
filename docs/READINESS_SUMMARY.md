@@ -31,8 +31,8 @@ on trust. "Validated" = backed by a passing automated test **and** confirmed in 
 | Benchmark reproducibility (spread ≤ 10%) | **Conditional** | A dedicated-hardware claim; sensitive to CPU-governor state (documented). A cold first run can exceed the spread while absolute targets still pass |
 | Independent (third-party) reproduction | **Pending** | All artefacts regenerate locally; foreign-hardware reproduction exists via CI runners (absolute targets met), but no external party has reproduced them yet |
 
-**Test suite:** 187 tests, all passing (conformance, tamper, gating, zero-egress, workloads,
-strict-provenance).
+**Test suite:** 193 tests, all passing (conformance, tamper, gating, zero-egress, workloads,
+strict-provenance, anchoring).
 
 ## Measured performance (fresh run, this review)
 
@@ -57,8 +57,9 @@ strict-provenance).
 
 ## Known limitations (as documented in the repository)
 
-- **Chain-only verification cannot detect tail truncation** — requires comparison against an
-  externally anchored head hash (Merkle / signed checkpoints are roadmap).
+- **Tail truncation / rollback** is now detected by verifying the ledger against a signed
+  `checkpoint()` anchored out-of-band (`verdictplane anchor` / `verify-anchor`). Privileged deletion
+  of the whole file remains out of scope for a file-backed ledger.
 - **Allow-path provenance is written on completion** by default (deny and require_human *are*
   recorded first). A crash mid-execution presents as a detectable tail gap. Audit-critical paths
   can opt into **strict provenance** (`VERDICTPLANE_STRICT_PROVENANCE=1`) to record an `intent`
@@ -75,7 +76,7 @@ strict-provenance).
 ```bash
 git clone https://github.com/FrankAsanteVanLaarhoven/VerdictPlane.git && cd VerdictPlane
 make setup     # venv + editable install
-make test      # 187 tests
+make test      # 193 tests
 make bench      # six-target scoreboard; nonzero exit on any absolute-target miss
 make evidence  # regenerates docs/EVIDENCE.md from live runs
 ```

@@ -5,15 +5,18 @@ mutation, insertion, deletion, or reordering of recorded history breaks the
 chain at a detectable index. `verify()` walks the chain and reports the first
 bad line.
 
-Threat model: detects tampering with recorded history. Truncation of the tail
-is detected by comparing `head()` against an externally anchored head hash
-(see tests); preventing privileged deletion of the whole file is out of scope
-for the file-backed ledger (P6+ can anchor heads externally / Merkle-ize).
+Threat model: detects tampering with recorded history. Tail truncation and
+rollback are detected by `verify_extends()` against an externally anchored,
+optionally HMAC-signed `checkpoint()` (head + count + Merkle root) — mutations a
+self-contained chain walk cannot see, because a truncated-but-valid prefix still
+verifies. Preventing privileged deletion of the whole file is out of scope for a
+file-backed ledger.
 
 Enforcement-path module: stdlib only, deterministic, zero-egress, no model.
 """
 
 import hashlib
+import hmac
 import json
 import os
 import threading
@@ -27,6 +30,29 @@ def _entry_hash(prev: str, body: dict) -> str:
     return hashlib.sha256(
         (prev + json.dumps(body, sort_keys=True)).encode()
     ).hexdigest()
+
+
+def merkle_root(leaf_hashes) -> str:
+    """Merkle root over ordered leaf hashes (SHA-256, domain-separated nodes).
+
+    Unpaired nodes are carried up unchanged rather than duplicated, avoiding the
+    duplicate-last second-preimage weakness. Empty -> GENESIS. A compact,
+    order-committing digest of the whole ledger for external anchoring.
+    """
+    level = list(leaf_hashes)
+    if not level:
+        return GENESIS
+    while len(level) > 1:
+        nxt = [hashlib.sha256(("node:" + level[i] + level[i + 1]).encode()).hexdigest()
+               for i in range(0, len(level) - 1, 2)]
+        if len(level) % 2:
+            nxt.append(level[-1])  # carry the unpaired node up unchanged
+        level = nxt
+    return level[0]
+
+
+def _canon(d: dict) -> bytes:
+    return json.dumps(d, sort_keys=True).encode()
 
 
 class Ledger:
@@ -102,3 +128,53 @@ class Ledger:
                     return False, i
                 prev = entry_hash
         return True, None
+
+    def entry_hashes(self) -> list[str]:
+        """All entry hashes in order (the Merkle leaves)."""
+        return [e["hash"] for e in self.entries()]
+
+    def checkpoint(self, *, key: bytes | None = None) -> dict:
+        """A verifiable snapshot of ledger state, for EXTERNAL anchoring.
+
+        Anchoring a checkpoint out-of-band lets `verify_extends` later detect tail
+        truncation and rollback — which a self-contained chain walk cannot, because
+        a truncated-but-valid prefix still verifies. Optionally HMAC-signed so the
+        anchor is itself tamper-evident and attributable.
+        """
+        hashes = self.entry_hashes()
+        cp = {
+            "head": hashes[-1] if hashes else GENESIS,
+            "count": len(hashes),
+            "merkle_root": merkle_root(hashes),
+            "ts": time.time_ns(),
+        }
+        if key is not None:
+            cp["hmac"] = hmac.new(key, _canon(cp), hashlib.sha256).hexdigest()
+        return cp
+
+    def verify_extends(self, anchor: dict, *, key: bytes | None = None) -> tuple[bool, str]:
+        """True iff the current ledger is an append-only extension of `anchor`.
+
+        Detects truncation (fewer entries than anchored, or the anchored head no
+        longer at its index) and rollback (history diverged at/under the anchor).
+        Verifies the anchor's HMAC first when a key is supplied.
+        """
+        if key is not None:
+            expected = anchor.get("hmac")
+            unsigned = {k: v for k, v in anchor.items() if k != "hmac"}
+            if not expected or not hmac.compare_digest(
+                expected, hmac.new(key, _canon(unsigned), hashlib.sha256).hexdigest()
+            ):
+                return False, "anchor signature invalid"
+        ok, bad = self.verify()
+        if not ok:
+            return False, f"chain broken at line {bad}"
+        hashes = self.entry_hashes()
+        anchored = anchor.get("count", 0)
+        if len(hashes) < anchored:
+            return False, f"truncated: {len(hashes)} entries < anchored {anchored}"
+        if anchored == 0:
+            return True, "extends genesis"
+        if hashes[anchored - 1] != anchor.get("head"):
+            return False, "rollback: anchored head not present at its index"
+        return True, "append-only extension verified"
