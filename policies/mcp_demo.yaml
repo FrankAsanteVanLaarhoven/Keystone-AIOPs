@@ -1,0 +1,8 @@
+# Policy for the MCP demo agent: reads flow, writes need a human.
+default: require_human
+
+rules:
+  - match: { effect: read }
+    decision: allow
+  - match: { effect: write }
+    decision: require_human
