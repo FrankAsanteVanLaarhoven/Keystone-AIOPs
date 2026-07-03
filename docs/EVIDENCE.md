@@ -3,7 +3,7 @@
 Assembled from live runs by `make evidence` (scripts/build_evidence.py).
 Nothing below is hand-written output.
 
-- **Commit:** `5b35f524fa868d1241b1a2282dc0d0b4d98ca5c7`
+- **Commit:** `bd456d2e2ee655900c1cd9f5a49565db33f7ddca`
 - **Repo:** https://github.com/FrankAsanteVanLaarhoven/VerdictPlane
 - **Reproduce:** `make setup && make test && make evidence`
 
@@ -26,18 +26,18 @@ Nothing below is hand-written output.
 ```
 ........................................................................ [ 80%]
 ....................................                                     [100%]
-180 passed in 2.75s
+180 passed in 2.79s
 ```
 
 Recent history:
 
 ```
-5b35f52 P6 sidecar deploy: network-less containers, zero-egress proven three ways
-ac6bff6 Benchmark report: clean capture against committed source
-8d8ec83 P5 benchmark harness: measured launch numbers, all six targets pass
-b8ad473 Evidence pack: clean capture against committed source
-bfec14d Refresh evidence pack against the P4 commit; flag dirty-tree captures
-039bd9e P4 governed workloads: DriftGuard promotion + Sentinel rollback, with audit evidence pack
+bd456d2 Bench: spread target gated locally, informational on shared runners
+22bd83c Rename project to VerdictPlane; add evidence appendix
+ad4fc02 Fix gate write race caught by CI: atomic pending/resolved writes
+e525ef0 CI gating + PyPI-ready packaging (post-P7 hardening)
+144e3f8 P7 OSS polish: README quickstart, architecture + case study docs, MIT license
+6d1ac86 Evidence pack: clean capture including E7
 ```
 
 
@@ -128,17 +128,17 @@ $ test -f registry.json && echo exists || echo absent
 absent   <- side effect has NOT run
 
 $ verdictplane pending
-90a90c1b165a7798  model.promote  effect=promote  agent=driftguard  age=0s
+9bcbbb9ad2d8c69f  model.promote  effect=promote  agent=driftguard  age=0s
   args: {"baseline": {"baseline_macro_f1": 0.85, "candidate_macro_f1": 0.91, "margin": 0.02, "passed": true, "reason": null}, "stage": "Production", "version": "7"}
 
-$ verdictplane approve 90a90c1b165a --by frank
-approved 90a90c1b165a7798 (model.promote) by frank
+$ verdictplane approve 9bcbbb9ad2d8 --by frank
+approved 9bcbbb9ad2d8c69f (model.promote) by frank
 
 $ cat registry.json
 {"production_alias": "7"}   <- side effect ran ONLY after approval
 
-$ verdictplane deny 9e1608f9d211 --by frank
-denied 9e1608f9d211502f (model.promote) by frank
+$ verdictplane deny efc933e3df24 --by frank
+denied efc933e3df24f0b8 (model.promote) by frank
 
 $ cat registry.json
 {"production_alias": "7"}   <- unchanged; caller got ApprovalDenied
@@ -146,8 +146,8 @@ $ cat registry.json
 # governed_promote('9', gate_FAILED) -> PolicyDenied: model.promote: denied by policy
 # (deterministic policy deny; no approval was ever requested)
 
-$ verdictplane approve b5d4c3d09ca2 --by frank   # Sentinel rollback
-approved b5d4c3d09ca2a733 (incident.rollback) by frank
+$ verdictplane approve 15740a293243 --by frank   # Sentinel rollback
+approved 15740a2932436f96 (incident.rollback) by frank
 
 # rollback executed with incident payload: {'service': 'productcatalog', 'change': 'deploy v2.3.1', 'detect_t': 34}
 ```
@@ -158,27 +158,27 @@ approved b5d4c3d09ca2a733 (incident.rollback) by frank
 `verdictplane log`:
 
 ```
-90a90c1b165a7798  pending          require_human  model.promote  agent=driftguard
-8ead0060244fa6d9  executed         require_human  model.promote  agent=driftguard
-9e1608f9d211502f  pending          require_human  model.promote  agent=driftguard
-9018e569d64ede93  denied_by_human  require_human  model.promote  agent=driftguard
-4a539d7bb40760ba  blocked          deny           model.promote  agent=driftguard
-c460da74072de97e  executed         allow          incident.propose  agent=sentinel
-b5d4c3d09ca2a733  pending          require_human  incident.rollback  agent=sentinel
-bd55c8d7c042469d  executed         require_human  incident.rollback  agent=sentinel
+9bcbbb9ad2d8c69f  pending          require_human  model.promote  agent=driftguard
+a9172a72364b5bb4  executed         require_human  model.promote  agent=driftguard
+efc933e3df24f0b8  pending          require_human  model.promote  agent=driftguard
+8fc2b4e450efcede  denied_by_human  require_human  model.promote  agent=driftguard
+8155c9008b8f0566  blocked          deny           model.promote  agent=driftguard
+877027b28150fc46  executed         allow          incident.propose  agent=sentinel
+15740a2932436f96  pending          require_human  incident.rollback  agent=sentinel
+647ddbba4e0a62c2  executed         require_human  incident.rollback  agent=sentinel
 ```
 
 `verdictplane verify`:
 
 ```
-ledger ok (8 entries, head=bd55c8d7c042469d)
+ledger ok (8 entries, head=647ddbba4e0a62c2)
 ```
 
 Raw hash-chained records (first 2 of 8):
 
 ```json
-{"hash": "90a90c1b165a779861207c60e23319f3e6eeb4750fdecc35bd7f9e9b24020e72", "prev": "0000000000000000000000000000000000000000000000000000000000000000", "record": {"action": {"agent": "driftguard", "args": {"baseline": {"baseline_macro_f1": 0.85, "candidate_macro_f1": 0.91, "margin": 0.02, "passed": true, "reason": null}, "stage": "Production", "version": "7"}, "context": {}, "effect": "promote", "tool": "model.promote"}, "decision": "require_human", "outcome": "pending", "rule": {"decision": "require_human", "match": {"args.baseline.passed": true, "args.stage": "Production", "tool": "model.promote"}}}, "ts": 1783040565543026448}
-{"hash": "8ead0060244fa6d94a1b699218069d4aeb2b5e84b43a612b5607ec2f059f427d", "prev": "90a90c1b165a779861207c60e23319f3e6eeb4750fdecc35bd7f9e9b24020e72", "record": {"action": {"agent": "driftguard", "args": {"baseline": {"baseline_macro_f1": 0.85, "candidate_macro_f1": 0.91, "margin": 0.02, "passed": true, "reason": null}, "stage": "Production", "version": "7"}, "context": {}, "effect": "promote", "tool": "model.promote"}, "decision": "require_human", "outcome": "executed", "rule": {"decision": "require_human", "match": {"args.baseline.passed": true, "args.stage": "Production", "tool": "model.promote"}}, "token": "90a90c1b165a779861207c60e23319f3e6eeb4750fdecc35bd7f9e9b24020e72"}, "ts": 1783040565704842048}
+{"hash": "9bcbbb9ad2d8c69fc24376f8e9e60e8ab0a1208fc644aaed08746e83ec62e8ef", "prev": "0000000000000000000000000000000000000000000000000000000000000000", "record": {"action": {"agent": "driftguard", "args": {"baseline": {"baseline_macro_f1": 0.85, "candidate_macro_f1": 0.91, "margin": 0.02, "passed": true, "reason": null}, "stage": "Production", "version": "7"}, "context": {}, "effect": "promote", "tool": "model.promote"}, "decision": "require_human", "outcome": "pending", "rule": {"decision": "require_human", "match": {"args.baseline.passed": true, "args.stage": "Production", "tool": "model.promote"}}}, "ts": 1783075782588283397}
+{"hash": "a9172a72364b5bb4049a2ecacdba27ba451ca47775d39cd1b8ed2b17caa60869", "prev": "9bcbbb9ad2d8c69fc24376f8e9e60e8ab0a1208fc644aaed08746e83ec62e8ef", "record": {"action": {"agent": "driftguard", "args": {"baseline": {"baseline_macro_f1": 0.85, "candidate_macro_f1": 0.91, "margin": 0.02, "passed": true, "reason": null}, "stage": "Production", "version": "7"}, "context": {}, "effect": "promote", "tool": "model.promote"}, "decision": "require_human", "outcome": "executed", "rule": {"decision": "require_human", "match": {"args.baseline.passed": true, "args.stage": "Production", "tool": "model.promote"}}, "token": "9bcbbb9ad2d8c69fc24376f8e9e60e8ab0a1208fc644aaed08746e83ec62e8ef"}, "ts": 1783075782749355224}
 ```
 
 
