@@ -1,5 +1,7 @@
 # Keystone
 
+[![ci](https://github.com/FrankAsanteVanLaarhoven/Keystone-AIOPs/actions/workflows/ci.yml/badge.svg)](https://github.com/FrankAsanteVanLaarhoven/Keystone-AIOPs/actions/workflows/ci.yml)
+
 **The in-path control plane for AI actions.** Every consequential thing your
 agents and models do — a tool call, a model promotion, a proposed rollback —
 is **recorded** in a tamper-evident ledger, **checked** against declarative
@@ -32,6 +34,13 @@ Every claim above has a live-run artefact in [docs/EVIDENCE.md](docs/EVIDENCE.md
 git clone https://github.com/FrankAsanteVanLaarhoven/Keystone-AIOPs.git
 cd Keystone-AIOPs
 make setup && make test
+```
+
+Or as a library (dist name `keystone-aiops`, import name `keystone`;
+PyPI release pending — install from source until then):
+
+```bash
+pip install git+https://github.com/FrankAsanteVanLaarhoven/Keystone-AIOPs.git
 ```
 
 Terminal 1 — run a governed tool call (it blocks on the gate):

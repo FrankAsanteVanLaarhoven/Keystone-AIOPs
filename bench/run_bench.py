@@ -294,6 +294,10 @@ def main():
     ap.add_argument("--runs", type=int, default=5)
     ap.add_argument("--n", type=int, default=20000, help="allow-path calls per run")
     ap.add_argument("--n-gated", type=int, default=2000)
+    ap.add_argument("--max-spread-pct", type=float,
+                    default=float(os.environ.get("KEYSTONE_BENCH_MAX_SPREAD", "10")),
+                    help="reproducibility target for allow-p99 spread across runs "
+                         "(default 10; relax on noisy shared CI runners)")
     ap.add_argument("--out", default=os.path.join(ROOT, "artifacts", "stats.json"))
     args = ap.parse_args()
 
@@ -335,6 +339,7 @@ def main():
                 "advisory_env": "off (forced); enforcement never imports advisory regardless",
                 "runs": args.runs,
                 "allow_calls_per_run": args.n,
+                "spread_target_pct": args.max_spread_pct,
             },
             "latency": {**median_run, "note": "median run shown; per-run below"},
             "stability": {
@@ -354,7 +359,7 @@ def main():
             "tamper_detection_100pct": tamper["rate"] == 1.0,
             "zero_provenance_gaps": complete["gaps"] == 0 and complete["chain_ok"],
             "fail_safe_verified": safe["summary_returned"] is None and safe["decisions_unchanged"],
-            "reproducible_within_10pct": spread_pct(allow_p99s) <= 10.0,
+            "reproducible_within_spread_target": spread_pct(allow_p99s) <= args.max_spread_pct,
         }
 
         os.makedirs(os.path.dirname(args.out), exist_ok=True)
@@ -396,7 +401,7 @@ Machine-readable source: `artifacts/stats.json` (regenerated, not committed).
 | Tamper detection 100% at exact index | {'PASS' if t['tamper_detection_100pct'] else 'FAIL'} — {s['tamper_detection']['detected']}/{s['tamper_detection']['trials']} |
 | Zero provenance gaps + chain verifies | {'PASS' if t['zero_provenance_gaps'] else 'FAIL'} — {s['provenance_completeness']['gaps']} gaps / {s['provenance_completeness']['calls']} calls |
 | Fail-safe with advisory forced broken | {'PASS' if t['fail_safe_verified'] else 'FAIL'} |
-| Reproducibility (allow p99 spread <= 10%) | {'PASS' if t['reproducible_within_10pct'] else 'FAIL'} — spread {st['allow_p99_spread_pct']}% |
+| Reproducibility (allow p99 spread <= {s['meta']['spread_target_pct']:g}%) | {'PASS' if t['reproducible_within_spread_target'] else 'FAIL'} — spread {st['allow_p99_spread_pct']}% |
 
 ## Enforcement latency (median run, µs)
 

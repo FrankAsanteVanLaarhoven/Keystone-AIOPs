@@ -3,12 +3,23 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "keystone"
+name = "keystone-aiops"
 version = "0.1.0"
 description = "In-path, zero-egress control plane for AI actions: tamper-evident provenance, deterministic policy, human approval gates."
 requires-python = ">=3.12"
 authors = [{ name = "Frank Asante Van Laarhoven", email = "frankleroyvan@gmail.com" }]
 license = { text = "MIT" }
+keywords = ["ai-governance", "provenance", "human-in-the-loop", "policy", "mcp", "audit"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: System :: Systems Administration",
+]
 dependencies = [
     "pydantic>=2.7",
     "PyYAML>=6.0",
