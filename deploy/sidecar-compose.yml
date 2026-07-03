@@ -1,0 +1,33 @@
+# Keystone sidecar deployment — zero-egress by construction.
+#
+#   docker compose -f deploy/sidecar-compose.yml up --build agent
+#   docker compose -f deploy/sidecar-compose.yml run reviewer pending
+#   docker compose -f deploy/sidecar-compose.yml run reviewer approve <token>
+#
+# Both containers run with network_mode "none": the container runtime gives
+# them NO network interfaces (not even a bridge). Enforcement, the gate, and
+# the reviewer CLI coordinate purely through the shared /data volume, so the
+# runtime itself proves the no-egress property — there is nothing to leak
+# through even if the code wanted to.
+
+services:
+  agent:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    network_mode: "none"
+    volumes:
+      - keystone-data:/data
+    entrypoint: ["python", "/keystone/deploy/demo_agent.py"]
+
+  reviewer:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    network_mode: "none"
+    volumes:
+      - keystone-data:/data
+    # `docker compose run reviewer <subcommand>` invokes the keystone CLI.
+
+volumes:
+  keystone-data:

@@ -3,7 +3,7 @@
 Assembled from live runs by `make evidence` (scripts/build_evidence.py).
 Nothing below is hand-written output.
 
-- **Commit:** `bfec14db08f3f1171356884970c0cf30cabbdcdd`
+- **Commit:** `ac6bff66a48edacc9d8f9e026b9df4a92d748f89 (working tree DIRTY at capture time)`
 - **Repo:** https://github.com/FrankAsanteVanLaarhoven/Keystone-AIOPs
 - **Reproduce:** `make setup && make test && make evidence`
 
@@ -18,25 +18,26 @@ Nothing below is hand-written output.
 | Ledger is tamper-evident | E3 battery + E6 live forgery pinpointed at exact line | 100% detected |
 | Provenance completeness | E5 — one terminal record per governed call, chain verifies clean | 0 gaps |
 | P4 workloads governed end-to-end | E1 + E4/E5 — DriftGuard promote + Sentinel rollback through the gate | pass |
+| Zero egress during enforcement | E7 — socket kill-switch + empty-netns battery (kernel-level) | pass |
 
 
 ## E1 — Full test suite
 
 ```
 ........................................................................ [ 80%]
-..................................                                       [100%]
-178 passed in 2.55s
+....................................                                     [100%]
+180 passed in 2.78s
 ```
 
 Recent history:
 
 ```
+ac6bff6 Benchmark report: clean capture against committed source
+8d8ec83 P5 benchmark harness: measured launch numbers, all six targets pass
+b8ad473 Evidence pack: clean capture against committed source
 bfec14d Refresh evidence pack against the P4 commit; flag dirty-tree captures
 039bd9e P4 governed workloads: DriftGuard promotion + Sentinel rollback, with audit evidence pack
 5067030 P3 reviewer CLI + config-switched advisory (Fable 5 API | local Ollama | off)
-368755e P2 MCP interceptor: govern agent tool-calls at the dispatch boundary
-1d944b9 P1 interceptor + human gate: in-path enforcement with provenance by default
-84ad810 P0 trust core: hash-chained provenance ledger + deterministic policy engine
 ```
 
 
@@ -114,7 +115,7 @@ tests/test_provenance.py::test_reordered_lines_detected[4] PASSED        [ 92%]
 tests/test_provenance.py::test_reordered_lines_detected[5] PASSED        [ 95%]
 tests/test_provenance.py::test_garbage_line_detected PASSED              [ 97%]
 tests/test_provenance.py::test_tail_truncation_detected_via_anchored_head PASSED [100%]
-============================== 42 passed in 0.13s ==============================
+============================== 42 passed in 0.12s ==============================
 ```
 
 
@@ -127,17 +128,17 @@ $ test -f registry.json && echo exists || echo absent
 absent   <- side effect has NOT run
 
 $ keystone pending
-df6d404a10f08a04  model.promote  effect=promote  agent=driftguard  age=0s
+c357bf99ac598937  model.promote  effect=promote  agent=driftguard  age=0s
   args: {"baseline": {"baseline_macro_f1": 0.85, "candidate_macro_f1": 0.91, "margin": 0.02, "passed": true, "reason": null}, "stage": "Production", "version": "7"}
 
-$ keystone approve df6d404a10f0 --by frank
-approved df6d404a10f08a04 (model.promote) by frank
+$ keystone approve c357bf99ac59 --by frank
+approved c357bf99ac598937 (model.promote) by frank
 
 $ cat registry.json
 {"production_alias": "7"}   <- side effect ran ONLY after approval
 
-$ keystone deny 9fc24c324e79 --by frank
-denied 9fc24c324e799e97 (model.promote) by frank
+$ keystone deny 2838acba652a --by frank
+denied 2838acba652a2fae (model.promote) by frank
 
 $ cat registry.json
 {"production_alias": "7"}   <- unchanged; caller got ApprovalDenied
@@ -145,8 +146,8 @@ $ cat registry.json
 # governed_promote('9', gate_FAILED) -> PolicyDenied: model.promote: denied by policy
 # (deterministic policy deny; no approval was ever requested)
 
-$ keystone approve 27dad81efb29 --by frank   # Sentinel rollback
-approved 27dad81efb298450 (incident.rollback) by frank
+$ keystone approve 391bd5920fef --by frank   # Sentinel rollback
+approved 391bd5920fef9def (incident.rollback) by frank
 
 # rollback executed with incident payload: {'service': 'productcatalog', 'change': 'deploy v2.3.1', 'detect_t': 34}
 ```
@@ -157,27 +158,27 @@ approved 27dad81efb298450 (incident.rollback) by frank
 `keystone log`:
 
 ```
-df6d404a10f08a04  pending          require_human  model.promote  agent=driftguard
-ba791fb77f34daaa  executed         require_human  model.promote  agent=driftguard
-9fc24c324e799e97  pending          require_human  model.promote  agent=driftguard
-c2f5443451544216  denied_by_human  require_human  model.promote  agent=driftguard
-6dbd9cad1352ea1a  blocked          deny           model.promote  agent=driftguard
-e21831c40026f283  executed         allow          incident.propose  agent=sentinel
-27dad81efb298450  pending          require_human  incident.rollback  agent=sentinel
-d40b66de5886a009  executed         require_human  incident.rollback  agent=sentinel
+c357bf99ac598937  pending          require_human  model.promote  agent=driftguard
+ee36da4cc3b20b53  executed         require_human  model.promote  agent=driftguard
+2838acba652a2fae  pending          require_human  model.promote  agent=driftguard
+1a9c6f531eba421c  denied_by_human  require_human  model.promote  agent=driftguard
+a078f2b851391400  blocked          deny           model.promote  agent=driftguard
+3d30ef593a7fa0d4  executed         allow          incident.propose  agent=sentinel
+391bd5920fef9def  pending          require_human  incident.rollback  agent=sentinel
+2eb17c425e4f13a6  executed         require_human  incident.rollback  agent=sentinel
 ```
 
 `keystone verify`:
 
 ```
-ledger ok (8 entries, head=d40b66de5886a009)
+ledger ok (8 entries, head=2eb17c425e4f13a6)
 ```
 
 Raw hash-chained records (first 2 of 8):
 
 ```json
-{"hash": "df6d404a10f08a044373e21536f5cfbf339edeba02b47018a0ae6f5f40a5e1cf", "prev": "0000000000000000000000000000000000000000000000000000000000000000", "record": {"action": {"agent": "driftguard", "args": {"baseline": {"baseline_macro_f1": 0.85, "candidate_macro_f1": 0.91, "margin": 0.02, "passed": true, "reason": null}, "stage": "Production", "version": "7"}, "context": {}, "effect": "promote", "tool": "model.promote"}, "decision": "require_human", "outcome": "pending", "rule": {"decision": "require_human", "match": {"args.baseline.passed": true, "args.stage": "Production", "tool": "model.promote"}}}, "ts": 1783039014821910444}
-{"hash": "ba791fb77f34daaab2f5837da5376e58760164d35e5c865edac8072da7f35193", "prev": "df6d404a10f08a044373e21536f5cfbf339edeba02b47018a0ae6f5f40a5e1cf", "record": {"action": {"agent": "driftguard", "args": {"baseline": {"baseline_macro_f1": 0.85, "candidate_macro_f1": 0.91, "margin": 0.02, "passed": true, "reason": null}, "stage": "Production", "version": "7"}, "context": {}, "effect": "promote", "tool": "model.promote"}, "decision": "require_human", "outcome": "executed", "rule": {"decision": "require_human", "match": {"args.baseline.passed": true, "args.stage": "Production", "tool": "model.promote"}}, "token": "df6d404a10f08a044373e21536f5cfbf339edeba02b47018a0ae6f5f40a5e1cf"}, "ts": 1783039014982983173}
+{"hash": "c357bf99ac598937d38cca07399fdcf22a77f33484eae6ca9aa37869d2606a8d", "prev": "0000000000000000000000000000000000000000000000000000000000000000", "record": {"action": {"agent": "driftguard", "args": {"baseline": {"baseline_macro_f1": 0.85, "candidate_macro_f1": 0.91, "margin": 0.02, "passed": true, "reason": null}, "stage": "Production", "version": "7"}, "context": {}, "effect": "promote", "tool": "model.promote"}, "decision": "require_human", "outcome": "pending", "rule": {"decision": "require_human", "match": {"args.baseline.passed": true, "args.stage": "Production", "tool": "model.promote"}}}, "ts": 1783040561305347882}
+{"hash": "ee36da4cc3b20b53bb96140a650b1cddd45604b823ec476aaf8f63e7f8be9801", "prev": "c357bf99ac598937d38cca07399fdcf22a77f33484eae6ca9aa37869d2606a8d", "record": {"action": {"agent": "driftguard", "args": {"baseline": {"baseline_macro_f1": 0.85, "candidate_macro_f1": 0.91, "margin": 0.02, "passed": true, "reason": null}, "stage": "Production", "version": "7"}, "context": {}, "effect": "promote", "tool": "model.promote"}, "decision": "require_human", "outcome": "executed", "rule": {"decision": "require_human", "match": {"args.baseline.passed": true, "args.stage": "Production", "tool": "model.promote"}}, "token": "c357bf99ac598937d38cca07399fdcf22a77f33484eae6ca9aa37869d2606a8d"}, "ts": 1783040561466795782}
 ```
 
 
@@ -189,6 +190,23 @@ LEDGER TAMPERED at line 3
 exit code: 1
 ```
 
+
+## E7 — Zero egress during enforcement
+
+Full enforcement battery (all decision paths, gate resolution, both P4
+workloads, chain verify) under a socket kill-switch and again inside an empty
+network namespace (`unshare -rn`; outbound probe must fail before the battery
+runs):
+
+```
+tests/test_zero_egress.py::test_enforcement_runs_with_sockets_disabled PASSED [ 50%]
+tests/test_zero_egress.py::test_enforcement_runs_in_empty_network_namespace PASSED [100%]
+============================== 2 passed in 0.30s ===============================
+```
+
+The sidecar deployment (deploy/sidecar-compose.yml) additionally runs both
+containers with `network_mode: "none"` — the container runtime allocates no
+interfaces at all, so no-egress holds by construction in deployment too.
 
 ## Governing policy (policies/workloads.yaml)
 

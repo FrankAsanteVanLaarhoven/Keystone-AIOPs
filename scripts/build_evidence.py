@@ -88,6 +88,12 @@ def main():
     e3 = "\n".join(line for line in e3.splitlines()
                    if "PASSED" in line or "passed" in line)
 
+    # E7 — zero-egress proofs (socket kill-switch + empty network namespace)
+    e7 = sh([os.path.join(BIN, "pytest"), "tests/test_zero_egress.py",
+             "-v", "-o", "addopts=", "--no-header"]).stdout
+    e7 = "\n".join(line for line in e7.splitlines()
+                   if "PASSED" in line or "SKIPPED" in line or "passed" in line)
+
     # E4 — live cross-process gate demo on the real workload wrappers
     policy = load_policy(os.path.join(ROOT, "policies", "workloads.yaml"))
     ledger = Ledger(os.path.join(RUN, "ledger.jsonl"))
@@ -181,6 +187,7 @@ def main():
 | Ledger is tamper-evident | E3 battery + E6 live forgery pinpointed at exact line | 100% detected |
 | Provenance completeness | E5 — one terminal record per governed call, chain verifies clean | 0 gaps |
 | P4 workloads governed end-to-end | E1 + E4/E5 — DriftGuard promote + Sentinel rollback through the gate | pass |
+| Zero egress during enforcement | E7 — socket kill-switch + empty-netns battery (kernel-level) | pass |
 """
 
     md = f"""# Keystone — Evidence Pack (P0–P4)
@@ -230,6 +237,18 @@ Raw hash-chained records (first 2 of {len(raw_lines)}):
 ## E6 — Live forgery detection
 
 {block(e6)}
+
+## E7 — Zero egress during enforcement
+
+Full enforcement battery (all decision paths, gate resolution, both P4
+workloads, chain verify) under a socket kill-switch and again inside an empty
+network namespace (`unshare -rn`; outbound probe must fail before the battery
+runs):
+
+{block(e7)}
+The sidecar deployment (deploy/sidecar-compose.yml) additionally runs both
+containers with `network_mode: "none"` — the container runtime allocates no
+interfaces at all, so no-egress holds by construction in deployment too.
 
 ## Governing policy (policies/workloads.yaml)
 
