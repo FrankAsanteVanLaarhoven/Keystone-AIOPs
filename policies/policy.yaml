@@ -1,0 +1,41 @@
+# Keystone example policy.
+# First-match wins, top to bottom; anything unmatched falls to `default`.
+# Conditions: scalars are case-sensitive globs; {gt|lt|eq|in: ...} are operators.
+# Missing fields / incomparable types never match a rule (falls to the default).
+
+default: require_human   # default-deny posture
+
+rules:
+  # Shell execution is never allowed, whatever the claimed effect.
+  - match: { tool: shell.exec }
+    decision: deny
+
+  # Untrusted agents may never write.
+  - match: { agent: untrusted, effect: write }
+    decision: deny
+
+  # Reads are safe by default.
+  - match: { effect: read }
+    decision: allow
+
+  # Large database writes need a human; small ones flow.
+  - match: { tool: db.write, args.amount: { gt: 1000 } }
+    decision: require_human
+  - match: { tool: db.write, args.amount: { lt: 1001 } }
+    decision: allow
+
+  # Outbound email is always gated.
+  - match: { tool: email.send }
+    decision: require_human
+
+  # Filesystem writes: scratch space flows, everything else is gated.
+  - match: { tool: fs.write, args.path: "/tmp/*" }
+    decision: allow
+  - match: { tool: "fs.*", effect: write }
+    decision: require_human
+
+  # CI/scheduler may deploy to staging unattended; production needs a human.
+  - match: { agent: { in: [ci, scheduler] }, tool: deploy.rollout, args.env: staging }
+    decision: allow
+  - match: { tool: deploy.rollout, args.env: production }
+    decision: require_human
