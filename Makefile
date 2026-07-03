@@ -19,5 +19,6 @@ verify:
 evidence:
 	PYTHONPATH= PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 $(PY) scripts/build_evidence.py
 
+.PHONY: bench
 bench:
-	@echo "bench harness lands in P5" && exit 1
+	PYTHONPATH= KEYSTONE_ADVISORY=off $(PY) bench/run_bench.py
