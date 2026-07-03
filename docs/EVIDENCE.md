@@ -3,7 +3,7 @@
 Assembled from live runs by `make evidence` (scripts/build_evidence.py).
 Nothing below is hand-written output.
 
-- **Commit:** `ac6bff66a48edacc9d8f9e026b9df4a92d748f89 (working tree DIRTY at capture time)`
+- **Commit:** `5b35f524fa868d1241b1a2282dc0d0b4d98ca5c7`
 - **Repo:** https://github.com/FrankAsanteVanLaarhoven/Keystone-AIOPs
 - **Reproduce:** `make setup && make test && make evidence`
 
@@ -26,18 +26,18 @@ Nothing below is hand-written output.
 ```
 ........................................................................ [ 80%]
 ....................................                                     [100%]
-180 passed in 2.78s
+180 passed in 2.75s
 ```
 
 Recent history:
 
 ```
+5b35f52 P6 sidecar deploy: network-less containers, zero-egress proven three ways
 ac6bff6 Benchmark report: clean capture against committed source
 8d8ec83 P5 benchmark harness: measured launch numbers, all six targets pass
 b8ad473 Evidence pack: clean capture against committed source
 bfec14d Refresh evidence pack against the P4 commit; flag dirty-tree captures
 039bd9e P4 governed workloads: DriftGuard promotion + Sentinel rollback, with audit evidence pack
-5067030 P3 reviewer CLI + config-switched advisory (Fable 5 API | local Ollama | off)
 ```
 
 
@@ -128,17 +128,17 @@ $ test -f registry.json && echo exists || echo absent
 absent   <- side effect has NOT run
 
 $ keystone pending
-c357bf99ac598937  model.promote  effect=promote  agent=driftguard  age=0s
+90a90c1b165a7798  model.promote  effect=promote  agent=driftguard  age=0s
   args: {"baseline": {"baseline_macro_f1": 0.85, "candidate_macro_f1": 0.91, "margin": 0.02, "passed": true, "reason": null}, "stage": "Production", "version": "7"}
 
-$ keystone approve c357bf99ac59 --by frank
-approved c357bf99ac598937 (model.promote) by frank
+$ keystone approve 90a90c1b165a --by frank
+approved 90a90c1b165a7798 (model.promote) by frank
 
 $ cat registry.json
 {"production_alias": "7"}   <- side effect ran ONLY after approval
 
-$ keystone deny 2838acba652a --by frank
-denied 2838acba652a2fae (model.promote) by frank
+$ keystone deny 9e1608f9d211 --by frank
+denied 9e1608f9d211502f (model.promote) by frank
 
 $ cat registry.json
 {"production_alias": "7"}   <- unchanged; caller got ApprovalDenied
@@ -146,8 +146,8 @@ $ cat registry.json
 # governed_promote('9', gate_FAILED) -> PolicyDenied: model.promote: denied by policy
 # (deterministic policy deny; no approval was ever requested)
 
-$ keystone approve 391bd5920fef --by frank   # Sentinel rollback
-approved 391bd5920fef9def (incident.rollback) by frank
+$ keystone approve b5d4c3d09ca2 --by frank   # Sentinel rollback
+approved b5d4c3d09ca2a733 (incident.rollback) by frank
 
 # rollback executed with incident payload: {'service': 'productcatalog', 'change': 'deploy v2.3.1', 'detect_t': 34}
 ```
@@ -158,27 +158,27 @@ approved 391bd5920fef9def (incident.rollback) by frank
 `keystone log`:
 
 ```
-c357bf99ac598937  pending          require_human  model.promote  agent=driftguard
-ee36da4cc3b20b53  executed         require_human  model.promote  agent=driftguard
-2838acba652a2fae  pending          require_human  model.promote  agent=driftguard
-1a9c6f531eba421c  denied_by_human  require_human  model.promote  agent=driftguard
-a078f2b851391400  blocked          deny           model.promote  agent=driftguard
-3d30ef593a7fa0d4  executed         allow          incident.propose  agent=sentinel
-391bd5920fef9def  pending          require_human  incident.rollback  agent=sentinel
-2eb17c425e4f13a6  executed         require_human  incident.rollback  agent=sentinel
+90a90c1b165a7798  pending          require_human  model.promote  agent=driftguard
+8ead0060244fa6d9  executed         require_human  model.promote  agent=driftguard
+9e1608f9d211502f  pending          require_human  model.promote  agent=driftguard
+9018e569d64ede93  denied_by_human  require_human  model.promote  agent=driftguard
+4a539d7bb40760ba  blocked          deny           model.promote  agent=driftguard
+c460da74072de97e  executed         allow          incident.propose  agent=sentinel
+b5d4c3d09ca2a733  pending          require_human  incident.rollback  agent=sentinel
+bd55c8d7c042469d  executed         require_human  incident.rollback  agent=sentinel
 ```
 
 `keystone verify`:
 
 ```
-ledger ok (8 entries, head=2eb17c425e4f13a6)
+ledger ok (8 entries, head=bd55c8d7c042469d)
 ```
 
 Raw hash-chained records (first 2 of 8):
 
 ```json
-{"hash": "c357bf99ac598937d38cca07399fdcf22a77f33484eae6ca9aa37869d2606a8d", "prev": "0000000000000000000000000000000000000000000000000000000000000000", "record": {"action": {"agent": "driftguard", "args": {"baseline": {"baseline_macro_f1": 0.85, "candidate_macro_f1": 0.91, "margin": 0.02, "passed": true, "reason": null}, "stage": "Production", "version": "7"}, "context": {}, "effect": "promote", "tool": "model.promote"}, "decision": "require_human", "outcome": "pending", "rule": {"decision": "require_human", "match": {"args.baseline.passed": true, "args.stage": "Production", "tool": "model.promote"}}}, "ts": 1783040561305347882}
-{"hash": "ee36da4cc3b20b53bb96140a650b1cddd45604b823ec476aaf8f63e7f8be9801", "prev": "c357bf99ac598937d38cca07399fdcf22a77f33484eae6ca9aa37869d2606a8d", "record": {"action": {"agent": "driftguard", "args": {"baseline": {"baseline_macro_f1": 0.85, "candidate_macro_f1": 0.91, "margin": 0.02, "passed": true, "reason": null}, "stage": "Production", "version": "7"}, "context": {}, "effect": "promote", "tool": "model.promote"}, "decision": "require_human", "outcome": "executed", "rule": {"decision": "require_human", "match": {"args.baseline.passed": true, "args.stage": "Production", "tool": "model.promote"}}, "token": "c357bf99ac598937d38cca07399fdcf22a77f33484eae6ca9aa37869d2606a8d"}, "ts": 1783040561466795782}
+{"hash": "90a90c1b165a779861207c60e23319f3e6eeb4750fdecc35bd7f9e9b24020e72", "prev": "0000000000000000000000000000000000000000000000000000000000000000", "record": {"action": {"agent": "driftguard", "args": {"baseline": {"baseline_macro_f1": 0.85, "candidate_macro_f1": 0.91, "margin": 0.02, "passed": true, "reason": null}, "stage": "Production", "version": "7"}, "context": {}, "effect": "promote", "tool": "model.promote"}, "decision": "require_human", "outcome": "pending", "rule": {"decision": "require_human", "match": {"args.baseline.passed": true, "args.stage": "Production", "tool": "model.promote"}}}, "ts": 1783040565543026448}
+{"hash": "8ead0060244fa6d94a1b699218069d4aeb2b5e84b43a612b5607ec2f059f427d", "prev": "90a90c1b165a779861207c60e23319f3e6eeb4750fdecc35bd7f9e9b24020e72", "record": {"action": {"agent": "driftguard", "args": {"baseline": {"baseline_macro_f1": 0.85, "candidate_macro_f1": 0.91, "margin": 0.02, "passed": true, "reason": null}, "stage": "Production", "version": "7"}, "context": {}, "effect": "promote", "tool": "model.promote"}, "decision": "require_human", "outcome": "executed", "rule": {"decision": "require_human", "match": {"args.baseline.passed": true, "args.stage": "Production", "tool": "model.promote"}}, "token": "90a90c1b165a779861207c60e23319f3e6eeb4750fdecc35bd7f9e9b24020e72"}, "ts": 1783040565704842048}
 ```
 
 
@@ -201,7 +201,7 @@ runs):
 ```
 tests/test_zero_egress.py::test_enforcement_runs_with_sockets_disabled PASSED [ 50%]
 tests/test_zero_egress.py::test_enforcement_runs_in_empty_network_namespace PASSED [100%]
-============================== 2 passed in 0.30s ===============================
+============================== 2 passed in 0.28s ===============================
 ```
 
 The sidecar deployment (deploy/sidecar-compose.yml) additionally runs both
