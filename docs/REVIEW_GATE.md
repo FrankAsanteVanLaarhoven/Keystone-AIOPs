@@ -13,8 +13,8 @@ Mark items **N/A** where they don't apply to the output type (noted per item).
       `make test` / a committed file, and the wording does not exceed what the mechanism provides
       (e.g. HMAC = *keyed tamper-evidence*, **not** non-repudiation; anchoring covers truncation
       *below the last anchor*).
-- [ ] **Honest scope.** Limitations are stated, not hidden. No overclaiming on synthetic results, no
-      hidden oracle/label leakage, no "SOTA" without external reproduction.
+- [ ] **Scope stated, no overclaiming.** Limitations are written down, not hidden. No overclaiming on
+      synthetic results, no hidden oracle/label leakage, no "SOTA" without external reproduction.
 - [ ] **Metrics are explicitly defined** — name, formula/definition, what it measures, why it matters
       (see [`docs/METRICS.md`](METRICS.md)).
 - [ ] **Metric-to-failure mapping is present**, and each metric is tagged *measured / operational /
