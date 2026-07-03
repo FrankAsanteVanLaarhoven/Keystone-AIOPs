@@ -67,10 +67,17 @@ def main():
     os.makedirs(RUN, exist_ok=True)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
 
-    commit = sh(["git", "rev-parse", "HEAD"]).stdout.strip()
-    if sh(["git", "status", "--porcelain"]).stdout.strip():
+    def git(*args):
+        try:
+            p = sh(["git", *args], check=False)
+            return p.stdout.strip() if p.returncode == 0 else ""
+        except OSError:
+            return ""  # git unavailable (e.g. running from a tarball or image)
+
+    commit = git("rev-parse", "HEAD") or os.environ.get("VERDICTPLANE_REPRO_COMMIT", "") or "unknown"
+    if git("status", "--porcelain"):
         commit += " (working tree DIRTY at capture time)"
-    commits = sh(["git", "log", "--oneline", "-6"]).stdout
+    commits = git("log", "--oneline", "-6") or "(git history unavailable in this environment)"
 
     # E1 — full suite
     suite = sh([os.path.join(BIN, "pytest")]).stdout.splitlines()

@@ -1,6 +1,8 @@
 PY := .venv/bin/python
 # PYTHONPATH= + autoload-off keep system packages (e.g. ROS pytest plugins) out.
 PYTEST := PYTHONPATH= PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest
+# Prefer the real docker CLI over any ~/.local/bin compose-injecting shim.
+DOCKER := $(shell [ -x /usr/bin/docker ] && echo /usr/bin/docker || echo docker)
 
 .PHONY: setup test verify bench
 
@@ -27,3 +29,12 @@ bench:
 demo:
 	VERDICTPLANE_LEDGER=artifacts/demo/ledger.jsonl VERDICTPLANE_GATE=artifacts/demo/gate \
 	VERDICTPLANE_DEMO_TIMEOUT=90 $(PY) deploy/demo_agent.py
+
+# One-command reproduction for external reviewers: builds a clean image and runs
+# the full protocol (tests + benchmark scoreboard + evidence pack) inside it.
+.PHONY: repro
+repro:
+	$(DOCKER) build -f deploy/repro.Dockerfile \
+	  --build-arg VERDICTPLANE_REPRO_COMMIT=$$(git rev-parse HEAD) \
+	  -t verdictplane-repro .
+	$(DOCKER) run --rm verdictplane-repro

@@ -122,6 +122,15 @@ def cpu_governors():
     return sorted(govs) or ["unknown"]
 
 
+def _git(args):
+    """git output, or '' when git is unavailable (e.g. running from a tarball or image)."""
+    try:
+        return subprocess.run(["git", *args], cwd=ROOT,
+                              capture_output=True, text=True).stdout.strip()
+    except OSError:
+        return ""
+
+
 def one_run(workdir, n_allow, n_gated):
     """One independent latency/throughput run on a fresh ledger."""
     ledger = Ledger(os.path.join(workdir, "ledger.jsonl"))
@@ -357,10 +366,9 @@ def main():
         safe = fail_safe(shared)
         wl = workloads_under_load(shared, 5000)
 
-        commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT,
-                                capture_output=True, text=True).stdout.strip()
-        if subprocess.run(["git", "status", "--porcelain"], cwd=ROOT,
-                          capture_output=True, text=True).stdout.strip():
+        commit = (_git(["rev-parse", "HEAD"])
+                  or os.environ.get("VERDICTPLANE_REPRO_COMMIT", "") or "unknown")
+        if _git(["status", "--porcelain"]):
             commit += " (working tree DIRTY at capture time)"
         governors = cpu_governors()
         stats = {
@@ -491,7 +499,9 @@ Advisory backend configured and transport forced to error: summary returned =
   crash can lose the buffered tail (truncation is detectable via an anchored
   head). CPU frequency scaling is the main variance source.
 """
-    with open(os.path.join(ROOT, "docs", "BENCHMARK.md"), "w") as f:
+    docs_dir = os.path.join(ROOT, "docs")
+    os.makedirs(docs_dir, exist_ok=True)
+    with open(os.path.join(docs_dir, "BENCHMARK.md"), "w") as f:
         f.write(md)
 
 

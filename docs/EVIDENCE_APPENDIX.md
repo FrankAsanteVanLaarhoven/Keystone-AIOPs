@@ -99,7 +99,7 @@ This runs on every CI push (`.github/workflows/ci.yml`, final step).
 git clone https://github.com/FrankAsanteVanLaarhoven/VerdictPlane.git
 cd VerdictPlane
 make setup        # venv + editable install
-make test         # 180 tests: conformance, tamper, gating, zero-egress
+make test         # 187 tests: conformance, tamper, gating, zero-egress
 make bench        # six-target scoreboard; nonzero exit on any miss
 make evidence     # regenerates docs/EVIDENCE.md from live runs
 ```
@@ -107,3 +107,30 @@ make evidence     # regenerates docs/EVIDENCE.md from live runs
 Compare your regenerated `docs/EVIDENCE.md` / `artifacts/stats.json` against
 the committed versions; the commit hash inside each file identifies the source
 state it was captured from.
+
+### Turnkey reproduction (Docker — one command)
+
+For reviewers with only Docker installed, the whole protocol runs in a clean,
+pinned container:
+
+```bash
+make repro       # builds deploy/repro.Dockerfile and runs the protocol
+```
+
+or directly:
+
+```bash
+docker build -f deploy/repro.Dockerfile \
+  --build-arg VERDICTPLANE_REPRO_COMMIT=$(git rev-parse HEAD) \
+  -t verdictplane-repro .
+docker run --rm verdictplane-repro
+```
+
+The container runs the test suite, the benchmark scoreboard, and the evidence
+pack, and **exits nonzero on any failure**. The absolute benchmark targets
+(p99 < 1 ms, > 10k actions/s, tamper 100%, zero gaps, fail-safe) gate the run;
+the allow-p99 **spread** target is reported but not gated inside a container,
+because a shared/virtualized host measures the environment, not the system — the
+tight ≤ 10% spread is a dedicated-hardware claim you reproduce natively with a
+pinned CPU governor (the benchmark report records the governor, so this is
+verifiable). The commit is stamped into the run via the build argument.
