@@ -31,8 +31,8 @@ on trust. "Validated" = backed by a passing automated test **and** confirmed in 
 | Benchmark reproducibility (spread ≤ 10%) | **Conditional** | A dedicated-hardware claim; sensitive to CPU-governor state (documented). A cold first run can exceed the spread while absolute targets still pass |
 | Independent (third-party) reproduction | **Pending** | All artefacts regenerate locally; foreign-hardware reproduction exists via CI runners (absolute targets met), but no external party has reproduced them yet |
 
-**Test suite:** 206 tests, all passing (conformance, tamper, gating, zero-egress, workloads,
-strict-provenance, anchoring, quorum, durability).
+**Test suite:** 213 tests, all passing (conformance, tamper, gating, zero-egress, workloads,
+strict-provenance, anchoring, quorum, durability; plus the Phase B EAG-Bench schema validator).
 
 ## Measured performance (fresh run, this review)
 
@@ -81,7 +81,7 @@ strict-provenance, anchoring, quorum, durability).
 ```bash
 git clone https://github.com/FrankAsanteVanLaarhoven/VerdictPlane.git && cd VerdictPlane
 make setup     # venv + editable install
-make test      # 206 tests
+make test      # 213 tests
 make bench      # six-target scoreboard; nonzero exit on any absolute-target miss
 make evidence  # regenerates docs/EVIDENCE.md from live runs
 ```

@@ -25,6 +25,10 @@ evidence:
 bench:
 	PYTHONPATH= VERDICTPLANE_ADVISORY=off $(PY) bench/run_bench.py
 
+.PHONY: eag-validate
+eag-validate:
+	$(PY) benchmarks/eag_bench/validate.py
+
 .PHONY: demo
 demo:
 	VERDICTPLANE_LEDGER=artifacts/demo/ledger.jsonl VERDICTPLANE_GATE=artifacts/demo/gate \

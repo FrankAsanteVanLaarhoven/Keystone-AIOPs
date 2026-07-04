@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/FrankAsanteVanLaarhoven/VerdictPlane/eag-bench/action_case-1.0.json",
+  "title": "EAG-Bench Enterprise Action Case",
+  "description": "One canonical case in the Enterprise Action Corpus. A case pairs a consequential enterprise action with its ground-truth governance outcome and an instrumented side-effect sentinel, so the harness can prove VerdictPlane produced the right verdict AND that the mutation only ever fired in its permitted window. Minimal by design (v1.0); extend by bumping case_schema_version.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "case_schema_version",
+    "case_id",
+    "title",
+    "domain",
+    "risk_level",
+    "action",
+    "expected_verdict",
+    "side_effect_sentinel",
+    "expected_ledger",
+    "source"
+  ],
+  "properties": {
+    "case_schema_version": {
+      "const": "1.0",
+      "description": "Schema version this case targets."
+    },
+    "case_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "description": "Stable, unique, sortable id, e.g. cloud_iam.attach_admin_policy.deny"
+    },
+    "title": { "type": "string", "minLength": 3 },
+    "description": { "type": "string" },
+    "domain": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "Controlled vocabulary (extensible). Seed domains: cloud_iam, model_promotion, incident_rollback, mcp_write_tool, data_export_pii, security_response, finance_payment, code_deployment, hr_employee_data, robotics_ot."
+    },
+    "risk_level": { "enum": ["low", "medium", "high", "critical"] },
+    "evaluation_tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "description": "Free-form slice tags, e.g. adversarial, prompt_injection, over_threshold."
+    },
+
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actor", "tool", "operation", "effect_type", "arguments"],
+      "description": "Maps 1:1 to a VerdictPlane Action so the harness can build one directly.",
+      "properties": {
+        "actor": { "type": "string", "description": "-> Action.agent" },
+        "system": { "type": "string", "description": "Target system/service (documentation)." },
+        "tool": { "type": "string", "description": "-> Action.tool, e.g. iam.attach_policy" },
+        "operation": { "type": "string", "description": "Human-readable operation / method name." },
+        "effect_type": {
+          "enum": ["read", "write", "delete", "execute", "admin", "network", "payment"],
+          "description": "Coarse effect the policy sees -> Action.effect."
+        },
+        "arguments": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "-> Action.args (policy matches on args.<field>)."
+        },
+        "data_sensitivity": {
+          "enum": ["public", "internal", "confidential", "restricted", "pii", "phi", "pci"]
+        }
+      }
+    },
+
+    "policy_ref": {
+      "type": "string",
+      "description": "Policy the case is evaluated under; default benchmarks/eag_bench/policies/eag_bench.yaml."
+    },
+
+    "expected_verdict": {
+      "enum": ["allow", "deny", "require_human", "allow_after_approval", "deny_after_timeout", "deny_after_veto"],
+      "description": "Ground truth. allow/deny/require_human = the policy DECISION (routing correctness); allow_after_approval/deny_after_timeout/deny_after_veto = the RESOLVED gate outcome."
+    },
+    "required_gate": { "type": "boolean", "default": false },
+    "required_approvers": { "type": "integer", "minimum": 0, "default": 0, "description": "quorum k." },
+    "deny_veto": { "type": "boolean", "default": true },
+
+    "side_effect_sentinel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "expected_timing"],
+      "description": "How the harness proves whether/when the mutation fired. THE core of the benchmark.",
+      "properties": {
+        "kind": {
+          "enum": ["none", "file_write", "db_update", "git_op", "deploy_flag", "iam_change",
+                   "network_call", "payment_instruction", "model_registry_mutation", "ticket_status", "robot_ot_dispatch"]
+        },
+        "sink": {
+          "type": "string",
+          "description": "Instrumented sink id the harness watches, e.g. iam.attach:/run/eag/sentinel/<case_id>."
+        },
+        "expected_timing": {
+          "enum": ["read_only", "after_allow", "after_approval", "after_quorum", "never"],
+          "description": "The ONLY window in which the mutation may fire. Any fire outside it is an escape."
+        },
+        "escape_is_critical": {
+          "type": "boolean",
+          "default": true,
+          "description": "A fire outside expected_timing is a critical failure (headline 0-escape metric)."
+        }
+      }
+    },
+
+    "expected_ledger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["terminal_outcome"],
+      "properties": {
+        "terminal_outcome": {
+          "enum": ["executed", "denied", "denied_by_human", "intent", "pending"]
+        },
+        "must_contain": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true,
+          "description": "Fields that must appear in the terminal record, e.g. tool, agent, approved_by."
+        }
+      }
+    },
+
+    "negative_controls": {
+      "type": "array",
+      "description": "Variants that MUST flip the verdict — guards against a trivially-passing case.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["description", "expected_verdict"],
+        "properties": {
+          "description": { "type": "string" },
+          "mutate": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Dot-path overrides applied to action before re-evaluation, e.g. {\"args.amount\": 100}."
+          },
+          "expected_verdict": {
+            "enum": ["allow", "deny", "require_human", "allow_after_approval", "deny_after_timeout", "deny_after_veto"]
+          }
+        }
+      }
+    },
+
+    "attack_annotations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["framework", "id"],
+        "properties": {
+          "framework": { "enum": ["owasp_llm", "csa_caiq", "mitre_atlas", "custom"] },
+          "id": { "type": "string", "description": "e.g. LLM06, ATLAS T0051." },
+          "technique": { "type": "string" }
+        }
+      }
+    },
+
+    "compliance_mappings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["framework", "control"],
+        "properties": {
+          "framework": { "enum": ["eu_ai_act", "nist_ai_rmf", "iso_42001", "owasp_llm"] },
+          "control": { "type": "string", "description": "e.g. Art.14 human oversight, GOVERN-1.1, A.9.2." },
+          "note": { "type": "string" }
+        }
+      }
+    },
+
+    "source": { "enum": ["synthetic", "real", "anonymized"] },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "author": { "type": "string" },
+        "created": { "type": "string" },
+        "license": { "type": "string" },
+        "origin_note": { "type": "string" }
+      }
+    },
+
+    "reproduction_notes": { "type": "string" }
+  },
+
+  "allOf": [
+    {
+      "$comment": "A gated verdict must declare a gate with at least one required approver.",
+      "if": { "properties": { "expected_verdict": { "enum": ["require_human", "allow_after_approval", "deny_after_timeout", "deny_after_veto"] } } },
+      "then": {
+        "required": ["required_gate", "required_approvers"],
+        "properties": {
+          "required_gate": { "const": true },
+          "required_approvers": { "minimum": 1 }
+        }
+      }
+    },
+    {
+      "$comment": "A denied / timed-out / vetoed action must never fire its side effect.",
+      "if": { "properties": { "expected_verdict": { "enum": ["deny", "deny_after_timeout", "deny_after_veto"] } } },
+      "then": { "properties": { "side_effect_sentinel": { "properties": { "expected_timing": { "const": "never" } } } } }
+    }
+  ]
+}

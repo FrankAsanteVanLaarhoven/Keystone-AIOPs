@@ -16,12 +16,32 @@ Framed as an **open, standard-setting benchmark** for pre-execution action gover
 
 ## Build order (schema-first; do NOT jump to a 300–1000 corpus)
 
-1. **`schema/action_case.schema.json`** — the canonical case format. ← Phase B step 1.
-2. **25 seed cases** across 10 domains, validating against the schema.
+1. **`schema/action_case.schema.json`** — the canonical case format. ✅ **shipped** (+ a
+   dependency-free validator and 3 seed cases; see *Status* below).
+2. **25 seed cases** across 10 domains, validating against the schema. ← next (3/25 done).
 3. **Side-Effect Escape harness** — instrumented sentinels around fake sinks; headline metric.
 4. Policy-conformance / expected-verdict evaluation.
 5. MCP / tool-governance cases → agentic red-team cases → compliance mapping outputs.
 6. **EIGS-100 scoring only after the corpus + harness are stable.**
+
+## Status & layout
+
+```
+benchmarks/eag_bench/
+  schema/action_case.schema.json   canonical case format (v1.0)
+  cases/*.json                     the corpus (3 seed cases so far, across 3 domains)
+  validate.py                      stdlib-only validator (interprets the schema)
+```
+
+Validate the corpus (also runs in `make test` via `tests/test_eag_schema.py`):
+
+```bash
+make eag-validate            # or: python benchmarks/eag_bench/validate.py
+```
+
+The schema enforces two conditionals beyond structure: a **gated** verdict must declare
+`required_gate: true` with ≥1 approver, and a **deny/timeout/veto** verdict must set the sentinel
+`expected_timing: "never"` — so a case cannot claim a block while permitting the mutation.
 
 ## Step 1 — `action_case.schema.json`
 
