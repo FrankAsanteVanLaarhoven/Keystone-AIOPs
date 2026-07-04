@@ -62,7 +62,7 @@ def action_of(case: dict) -> dict:
     return {"tool": a["tool"], "effect": a["effect_type"], "args": a["arguments"], "agent": a["actor"]}
 
 
-def _reviewer(gate: Gate, mode: str, marks: dict, stop: threading.Event) -> None:
+def _reviewer(gate: Gate, mode: str, stop: threading.Event) -> None:
     """Background reviewer: resolves the one pending token per `mode`, then exits."""
     while not stop.is_set():
         pending = gate.list_pending()
@@ -76,19 +76,17 @@ def _reviewer(gate: Gate, mode: str, marks: dict, stop: threading.Event) -> None
                 for i in range(max(0, k - 1)):
                     gate.approve(token, by=f"reviewer-{i}")
                 gate.deny(token, by="reviewer-veto")
-            marks["resolved_ns"] = time.perf_counter_ns()
             return
         time.sleep(0.002)
 
 
-def _drive(case: dict, action: dict, *, policy, ledger: Ledger, gate: Gate):
-    """Run one case through govern() with the right gate resolution; return (fires, marks)."""
+def _drive(case: dict, action: dict, *, policy, ledger: Ledger, gate: Gate) -> int:
+    """Run one case through govern() with the right gate resolution; return the fire count."""
     verdict = case["expected_verdict"]
-    fires: list[int] = []
-    marks: dict = {}
+    fires = []
 
     def sink():
-        fires.append(time.perf_counter_ns())
+        fires.append(1)  # the instrumented side effect: records that the mutation ran
         return "ok"
 
     def run(**kw):
@@ -104,7 +102,7 @@ def _drive(case: dict, action: dict, *, policy, ledger: Ledger, gate: Gate):
     elif verdict in ("allow_after_approval", "deny_after_veto"):
         stop = threading.Event()
         mode = "approve" if verdict == "allow_after_approval" else "veto"
-        t = threading.Thread(target=_reviewer, args=(gate, mode, marks, stop))
+        t = threading.Thread(target=_reviewer, args=(gate, mode, stop))
         t.start()
         try:
             run(gate_timeout=5.0)
@@ -118,7 +116,7 @@ def _drive(case: dict, action: dict, *, policy, ledger: Ledger, gate: Gate):
             run(gate_timeout=GATE_TIMEOUT_UNRESOLVED)
         except ApprovalDenied:
             pass
-    return fires, marks
+    return len(fires)
 
 
 def evaluate_case(case: dict, workdir: str, policy: dict) -> dict:
@@ -131,19 +129,28 @@ def evaluate_case(case: dict, workdir: str, policy: dict) -> dict:
     decision, _rule = evaluate(action, policy)
     verdict_ok = decision == POLICY_LEVEL[case["expected_verdict"]]
 
-    fires, marks = _drive(case, action, policy=policy, ledger=ledger, gate=gate)
-    fired = len(fires) > 0
+    fired = _drive(case, action, policy=policy, ledger=ledger, gate=gate) > 0
 
+    records = list(ledger.entries())
+    outcomes = [r["record"].get("outcome") for r in records]
+    executed = next((r["record"] for r in records if r["record"].get("outcome") == "executed"), None)
+
+    # Escape = the mutation fired outside its permitted window.
+    #   never              : any fire is an escape (denied/vetoed/timed-out/routed).
+    #   after_approval/quorum: a fire is an escape only if the executed record does NOT
+    #                        show a full quorum — i.e. it ran short of the required
+    #                        approvals. (Structural: govern() calls the sink only after
+    #                        await_approval succeeds, so this is race-free, not timing-based.)
+    #   after_allow/read_only: no earlier window exists to escape into.
     timing = case["side_effect_sentinel"]["expected_timing"]
     if timing == "never":
         escaped = fired
     elif timing in ("after_approval", "after_quorum"):
-        escaped = fired and (marks.get("resolved_ns") is None or fires[0] < marks["resolved_ns"])
+        approvals = len((executed or {}).get("approved_by", []))
+        escaped = fired and approvals < case.get("required_approvers", 1)
     else:  # after_allow, read_only
         escaped = False
 
-    records = list(ledger.entries())
-    outcomes = [r["record"].get("outcome") for r in records]
     want = case["expected_ledger"]
     target = next((r["record"] for r in records if r["record"].get("outcome") == want["terminal_outcome"]), None)
     ledger_ok = target is not None and all(
