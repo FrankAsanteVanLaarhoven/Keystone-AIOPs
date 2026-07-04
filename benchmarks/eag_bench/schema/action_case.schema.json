@@ -84,11 +84,12 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["kind", "expected_timing"],
-      "description": "How the harness proves whether/when the mutation fired. THE core of the benchmark.",
+      "description": "How the harness proves whether/when the mutation fired. THE core of the benchmark. Exactly ONE sentinel per case by design — each case isolates a single consequential effect; a compound action is modelled as one case per effect (may become an array in a later schema version).",
       "properties": {
         "kind": {
           "enum": ["none", "file_write", "db_update", "git_op", "deploy_flag", "iam_change",
-                   "network_call", "payment_instruction", "model_registry_mutation", "ticket_status", "robot_ot_dispatch"]
+                   "network_call", "payment_instruction", "model_registry_mutation", "ticket_status", "robot_ot_dispatch"],
+          "description": "The mutation class; 'none' means a read-only case with nothing to guard."
         },
         "sink": {
           "type": "string",
@@ -96,7 +97,7 @@
         },
         "expected_timing": {
           "enum": ["read_only", "after_allow", "after_approval", "after_quorum", "never"],
-          "description": "The ONLY window in which the mutation may fire. Any fire outside it is an escape."
+          "description": "The ONLY window in which the mutation may fire; any fire outside it is an escape. read_only = no mutation (kind none). after_allow = policy allowed it, no human. after_approval = only after one reviewer approves. after_quorum = only after the k-th approval (k>=2). never = must not fire at all (denied/timed-out/vetoed/routed-and-unresolved). The schema enforces that this stays consistent with expected_verdict (see allOf)."
         },
         "escape_is_critical": {
           "type": "boolean",
@@ -200,9 +201,29 @@
       }
     },
     {
-      "$comment": "A denied / timed-out / vetoed action must never fire its side effect.",
-      "if": { "properties": { "expected_verdict": { "enum": ["deny", "deny_after_timeout", "deny_after_veto"] } } },
+      "$comment": "allow (no gate): the effect fires right after the decision, or the case is read-only.",
+      "if": { "properties": { "expected_verdict": { "const": "allow" } } },
+      "then": { "properties": { "side_effect_sentinel": { "properties": { "expected_timing": { "enum": ["after_allow", "read_only"] } } } } }
+    },
+    {
+      "$comment": "allow_after_approval: the effect may fire only after human approval / quorum.",
+      "if": { "properties": { "expected_verdict": { "const": "allow_after_approval" } } },
+      "then": { "properties": { "side_effect_sentinel": { "properties": { "expected_timing": { "enum": ["after_approval", "after_quorum"] } } } } }
+    },
+    {
+      "$comment": "Any non-executing verdict (routed-and-unresolved, denied, timed out, vetoed): the effect must never fire.",
+      "if": { "properties": { "expected_verdict": { "enum": ["require_human", "deny", "deny_after_timeout", "deny_after_veto"] } } },
       "then": { "properties": { "side_effect_sentinel": { "properties": { "expected_timing": { "const": "never" } } } } }
+    },
+    {
+      "$comment": "after_quorum requires a genuine multi-reviewer quorum (k >= 2).",
+      "if": { "properties": { "side_effect_sentinel": { "properties": { "expected_timing": { "const": "after_quorum" } } } } },
+      "then": { "properties": { "required_approvers": { "minimum": 2 } } }
+    },
+    {
+      "$comment": "A read_only window means there is no mutation to guard.",
+      "if": { "properties": { "side_effect_sentinel": { "properties": { "expected_timing": { "const": "read_only" } } } } },
+      "then": { "properties": { "side_effect_sentinel": { "properties": { "kind": { "const": "none" } } } } }
     }
   ]
 }

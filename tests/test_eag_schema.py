@@ -79,3 +79,37 @@ def test_gated_verdict_requires_an_approver():
     c["required_approvers"] = 0
     errs = V.validate_case(c, SCHEMA)
     assert any("required_approvers" in e for e in errs)
+
+
+def test_allow_verdict_cannot_claim_approval_window():
+    with open(os.path.join(CASES, "data_export_pii.read_aggregate_report.allow.json")) as f:
+        c = json.load(f)  # verdict allow
+    c["side_effect_sentinel"] = {**c["side_effect_sentinel"], "kind": "file_write", "expected_timing": "after_approval"}
+    errs = V.validate_case(c, SCHEMA)
+    assert any("expected_timing" in e for e in errs)
+
+
+def test_require_human_must_never_fire():
+    c = _case(expected_verdict="require_human")
+    c["required_gate"] = True
+    c["required_approvers"] = 1
+    c["side_effect_sentinel"] = {**c["side_effect_sentinel"], "expected_timing": "after_approval"}
+    errs = V.validate_case(c, SCHEMA)
+    assert any("expected_timing" in e and "never" in e for e in errs)
+
+
+def test_after_quorum_requires_two_approvers():
+    c = _case(expected_verdict="allow_after_approval")
+    c["required_gate"] = True
+    c["required_approvers"] = 1
+    c["side_effect_sentinel"] = {**c["side_effect_sentinel"], "kind": "db_update", "expected_timing": "after_quorum"}
+    errs = V.validate_case(c, SCHEMA)
+    assert any("required_approvers" in e and "minimum 2" in e for e in errs)
+
+
+def test_read_only_window_forbids_a_mutation_kind():
+    with open(os.path.join(CASES, "data_export_pii.read_aggregate_report.allow.json")) as f:
+        c = json.load(f)  # read_only + kind none
+    c["side_effect_sentinel"] = {**c["side_effect_sentinel"], "kind": "file_write"}
+    errs = V.validate_case(c, SCHEMA)
+    assert any("kind" in e and "none" in e for e in errs)

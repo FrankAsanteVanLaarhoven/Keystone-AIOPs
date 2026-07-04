@@ -112,7 +112,7 @@ This runs on every CI push (`.github/workflows/ci.yml`, final step).
 git clone https://github.com/FrankAsanteVanLaarhoven/VerdictPlane.git
 cd VerdictPlane
 make setup        # venv + editable install
-make test         # 213 tests: conformance, tamper, gating, zero-egress, anchoring, quorum, durability, eag-schema
+make test         # 217 tests: conformance, tamper, gating, zero-egress, anchoring, quorum, durability, eag-schema
 make bench        # six-target scoreboard; nonzero exit on any miss
 make evidence     # regenerates docs/EVIDENCE.md from live runs
 ```
