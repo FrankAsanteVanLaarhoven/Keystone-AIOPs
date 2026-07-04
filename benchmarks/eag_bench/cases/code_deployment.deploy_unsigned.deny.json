@@ -28,7 +28,7 @@
     "sink": "deploy.release:/run/eag/sentinel/code_deployment.deploy_unsigned.deny"
   },
   "expected_ledger": {
-    "terminal_outcome": "denied",
+    "terminal_outcome": "blocked",
     "must_contain": [
       "tool",
       "agent",

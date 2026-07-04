@@ -113,7 +113,8 @@
       "required": ["terminal_outcome"],
       "properties": {
         "terminal_outcome": {
-          "enum": ["executed", "denied", "denied_by_human", "intent", "pending"]
+          "enum": ["executed", "blocked", "denied_by_human", "pending", "intent", "failed"],
+          "description": "The ledger `outcome` field to expect. Policy-deny writes 'blocked'; a gate deny/timeout writes 'denied_by_human'; 'pending' is the non-terminal routing record; 'executed' on success."
         },
         "must_contain": {
           "type": "array",

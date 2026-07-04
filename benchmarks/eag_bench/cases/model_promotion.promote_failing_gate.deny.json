@@ -30,7 +30,7 @@
     "sink": "registry.promote_version:/run/eag/sentinel/model_promotion.promote_failing_gate.deny"
   },
   "expected_ledger": {
-    "terminal_outcome": "denied",
+    "terminal_outcome": "blocked",
     "must_contain": [
       "tool",
       "agent",

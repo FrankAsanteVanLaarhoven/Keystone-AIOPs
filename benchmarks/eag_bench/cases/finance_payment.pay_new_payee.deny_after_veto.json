@@ -33,7 +33,7 @@
     "must_contain": [
       "tool",
       "agent",
-      "denied_by"
+      "outcome"
     ]
   },
   "source": "synthetic",

@@ -31,7 +31,7 @@
     "must_contain": [
       "tool",
       "agent",
-      "token"
+      "outcome"
     ]
   },
   "source": "synthetic",

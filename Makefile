@@ -29,6 +29,10 @@ bench:
 eag-validate:
 	$(PY) benchmarks/eag_bench/validate.py
 
+.PHONY: enterprise-bench
+enterprise-bench:
+	PYTHONPATH= $(PY) benchmarks/eag_bench/harness.py
+
 .PHONY: demo
 demo:
 	VERDICTPLANE_LEDGER=artifacts/demo/ledger.jsonl VERDICTPLANE_GATE=artifacts/demo/gate \

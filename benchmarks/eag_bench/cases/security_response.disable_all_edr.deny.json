@@ -27,7 +27,7 @@
     "sink": "edr.set_policy:/run/eag/sentinel/security_response.disable_all_edr.deny"
   },
   "expected_ledger": {
-    "terminal_outcome": "denied",
+    "terminal_outcome": "blocked",
     "must_contain": [
       "tool",
       "agent",

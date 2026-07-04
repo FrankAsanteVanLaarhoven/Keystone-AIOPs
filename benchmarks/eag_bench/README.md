@@ -18,9 +18,10 @@ Framed as an **open, standard-setting benchmark** for pre-execution action gover
 
 1. **`schema/action_case.schema.json`** — the canonical case format. ✅ **shipped** (+ a
    dependency-free validator and 3 seed cases; see *Status* below).
-2. **25 seed cases** across 10 domains, validating against the schema. ← next (3/25 done).
-3. **Side-Effect Escape harness** — instrumented sentinels around fake sinks; headline metric.
-4. Policy-conformance / expected-verdict evaluation.
+2. **25 seed cases** across 10 domains, validating against the schema. ✅ **shipped** (see `MATRIX.md`).
+3. **Side-Effect Escape harness** — drives cases through `govern()`, instrumented sinks, headline
+   metric. ✅ **shipped** (`make enterprise-bench` → **0/25 escapes**; `policies/eag_bench.yaml`).
+4. Policy-conformance / expected-verdict evaluation. ✅ (folded into the harness: verdict 25/25).
 5. MCP / tool-governance cases → agentic red-team cases → compliance mapping outputs.
 6. **EIGS-100 scoring only after the corpus + harness are stable.**
 
@@ -29,14 +30,18 @@ Framed as an **open, standard-setting benchmark** for pre-execution action gover
 ```
 benchmarks/eag_bench/
   schema/action_case.schema.json   canonical case format (v1.0)
-  cases/*.json                     the corpus (3 seed cases so far, across 3 domains)
+  cases/*.json                     the corpus (25 seed cases across 10 domains)
+  policies/eag_bench.yaml          the enforcement policy the harness runs
   validate.py                      stdlib-only validator (interprets the schema)
+  harness.py                       Side-Effect Escape harness (drives cases through govern())
+  MATRIX.md                        coverage matrix + result
 ```
 
-Validate the corpus (also runs in `make test` via `tests/test_eag_schema.py`):
+Validate the corpus and run the escape harness (both also run in `make test`):
 
 ```bash
-make eag-validate            # or: python benchmarks/eag_bench/validate.py
+make eag-validate       # schema-validate the 25 cases
+make enterprise-bench   # drive them through VerdictPlane -> 0/25 escapes
 ```
 
 The schema enforces two conditionals beyond structure: a **gated** verdict must declare

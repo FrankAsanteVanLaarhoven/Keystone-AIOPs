@@ -28,7 +28,7 @@
     "sink": "ot.actuate:/run/eag/sentinel/robotics_ot.actuate_over_limit.deny"
   },
   "expected_ledger": {
-    "terminal_outcome": "denied",
+    "terminal_outcome": "blocked",
     "must_contain": [
       "tool",
       "agent",

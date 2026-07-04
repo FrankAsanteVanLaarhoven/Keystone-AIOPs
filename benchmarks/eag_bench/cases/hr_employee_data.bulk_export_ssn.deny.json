@@ -31,7 +31,7 @@
     "sink": "hris.export:/run/eag/sentinel/hr_employee_data.bulk_export_ssn.deny"
   },
   "expected_ledger": {
-    "terminal_outcome": "denied",
+    "terminal_outcome": "blocked",
     "must_contain": [
       "tool",
       "agent",

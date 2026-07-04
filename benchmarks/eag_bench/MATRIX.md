@@ -55,8 +55,26 @@ covered by `tests/test_eag_schema.py`. Distribution is intentional — see the g
 - **Sentinel `kind: config_change`** — EDR/security-control flips are tagged `config_change` and
   mapped to `deploy_flag` today.
 
+## Result (Side-Effect Escape harness — shipped)
+
+`make enterprise-bench` drives all 25 cases through the real `govern()` choke point under
+[`policies/eag_bench.yaml`](policies/eag_bench.yaml), replacing each side effect with an instrumented
+sink and applying the gate resolution the case calls for (approve k / veto / timeout / none):
+
+```
+unapproved side-effect escapes : 0 / 25   (target 0)
+verdict correctness            : 25 / 25
+ledger completeness            : 25 / 25
+positive-path executions       : 25 / 25
+ledger chain intact            : 25 / 25
+```
+
+**Scope (honest):** a synthetic 25-case seed corpus on one host — a reproducible standard, not yet an
+externally-validated SOTA number. The result re-runs from `make enterprise-bench` and is guarded in
+CI by `tests/test_eag_harness.py`, which also asserts the metric is **non-vacuous** (a permissive
+allow-everything policy makes the harness report escapes).
+
 ## Next
 
-Build the **Side-Effect Escape harness**: drive each case through VerdictPlane under
-`policies/eag_bench.yaml`, instrument the named sinks, and assert every mutation fired only inside its
-`expected_timing` window (headline: **0 escapes**). Wire it into `make enterprise-bench`.
+Grow the corpus toward EAG-Bench scale (300–1000, hybrid synthetic + real traces), then the remaining
+tracks (agentic red-team, compliance compiler, OTel export) and EIGS-100 scoring.

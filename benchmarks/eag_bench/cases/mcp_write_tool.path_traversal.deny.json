@@ -26,7 +26,7 @@
     "sink": "fs.write_file:/run/eag/sentinel/mcp_write_tool.path_traversal.deny"
   },
   "expected_ledger": {
-    "terminal_outcome": "denied",
+    "terminal_outcome": "blocked",
     "must_contain": [
       "tool",
       "agent",

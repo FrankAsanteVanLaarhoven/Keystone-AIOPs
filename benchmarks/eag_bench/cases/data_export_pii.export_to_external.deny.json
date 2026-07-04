@@ -28,7 +28,7 @@
     "sink": "report.export:/run/eag/sentinel/data_export_pii.export_to_external.deny"
   },
   "expected_ledger": {
-    "terminal_outcome": "denied",
+    "terminal_outcome": "blocked",
     "must_contain": [
       "tool",
       "agent",
