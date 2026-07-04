@@ -225,7 +225,7 @@ workloads/        governed DriftGuard promotion, Sentinel rollback
 bench/            make bench -> artifacts/stats.json + docs/BENCHMARK.md
 tests/            219 tests: conformance, tamper, gating, zero-egress, strict-provenance,
                   anchoring, quorum, durability, eag-schema
-benchmarks/       eag_bench: Enterprise Action Corpus schema + validator + seed cases (Phase B)
+benchmarks/       eag_bench: Enterprise Action Corpus (100 cases) + schema + Side-Effect Escape harness (Phase B)
 deploy/           Dockerfile, network-less sidecar compose, demo agent
 docs/             EVIDENCE.md (audit pack), BENCHMARK.md (measured numbers),
                   EVIDENCE_APPENDIX.md (conditions + reproduction),

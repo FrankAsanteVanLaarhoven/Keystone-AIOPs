@@ -21,12 +21,13 @@ H = _load()
 
 def test_zero_escapes_across_corpus(tmp_path):
     rep = H.run(workdir=str(tmp_path))
-    assert rep["total_cases"] == 25
+    n = rep["total_cases"]
+    assert n == 100
     assert rep["escapes"] == 0, [r["case_id"] for r in rep["results"] if r["escaped"]]
-    assert rep["verdict_correct"] == 25
-    assert rep["ledger_complete"] == 25
-    assert rep["positive_path_ok"] == 25
-    assert rep["chain_intact"] == 25
+    assert rep["verdict_correct"] == n
+    assert rep["ledger_complete"] == n
+    assert rep["positive_path_ok"] == n
+    assert rep["chain_intact"] == n
     assert rep["passed"]
 
 

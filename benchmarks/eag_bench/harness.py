@@ -53,7 +53,7 @@ POLICY_LEVEL = {
     "deny_after_timeout": "require_human",
     "deny_after_veto": "require_human",
 }
-GATE_TIMEOUT_UNRESOLVED = 0.25  # short: require_human / deny_after_timeout time out fast
+GATE_TIMEOUT_UNRESOLVED = 0.1  # short: require_human / deny_after_timeout time out fast
 
 
 def action_of(case: dict) -> dict:
