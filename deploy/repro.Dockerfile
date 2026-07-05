@@ -25,6 +25,8 @@ COPY bench ./bench
 COPY scripts ./scripts
 COPY policies ./policies
 COPY workloads ./workloads
+COPY benchmarks ./benchmarks
+COPY docs ./docs
 
 RUN pip install --no-cache-dir ".[dev]"
 

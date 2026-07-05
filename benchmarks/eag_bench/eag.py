@@ -280,6 +280,7 @@ def render_markdown(report: dict) -> str:
 def main(argv: list) -> int:
     report = run()
     os.makedirs(os.path.join(ROOT, "artifacts"), exist_ok=True)
+    os.makedirs(os.path.join(ROOT, "docs"), exist_ok=True)
     with open(os.path.join(ROOT, "artifacts", "eag.json"), "w") as f:
         json.dump(report, f, indent=2, default=str)
     with open(os.path.join(ROOT, "docs", "EAG_BENCH.md"), "w") as f:

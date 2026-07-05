@@ -58,9 +58,10 @@ propose-then-govern contract (its `proposal_to_action` did the mapping).
 **Next (EIGS is now gap-free at 100/100 — remaining work raises *epistemic* weight, not the score):**
 (a) grow the real slice — Sentinel's heavier causal-RCA pipeline over RCAEval RE1 / SMD (fresh
 investigations; needs its stack), the AetherForge `execution_traces.jsonl`, or a real VP deployment
-ledger; (b) **external reproduction** — the single biggest credibility lever left: an independent
-repro kit so the 100/100 is not just an internal self-assessment (per the review gate, no "beats X"
-until then).
+ledger; (b) **third-party validation** — the repro *kit* now covers the benchmark (`make repro` rebuilds
+a clean image and recomputes EIGS = 100/100 + the real slice; verified locally end-to-end), so the
+result is **reproducible**. The remaining lever is an actual **independent party running AND critiquing**
+the corpus/labels — reproducibility ≠ validation; per the review gate, no "beats X" until then.
 
 **Then:** small `provenance` additions (`origin`, `deid_method`, `license`); a de-identification
 checklist (strip secrets/PII, tokenise identifiers, drop free-text, verify no real credentials,

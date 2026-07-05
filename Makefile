@@ -51,7 +51,8 @@ demo:
 	VERDICTPLANE_DEMO_TIMEOUT=90 $(PY) deploy/demo_agent.py
 
 # One-command reproduction for external reviewers: builds a clean image and runs
-# the full protocol (tests + benchmark scoreboard + evidence pack) inside it.
+# the full protocol (tests + benchmark scoreboard + EAG-Bench EIGS scoreboard +
+# evidence pack) inside it. Reproducibility, not third-party validation.
 .PHONY: repro
 repro:
 	$(DOCKER) build -f deploy/repro.Dockerfile \

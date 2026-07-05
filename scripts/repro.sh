@@ -20,23 +20,33 @@ echo "   host   : $(uname -s -r -m)"
 echo "=============================================================="
 
 echo ""
-echo ">> [1/3] test suite (make test)"
+echo ">> [1/4] test suite (make test)"
 "$PY" -m pytest -q
 
 echo ""
-echo ">> [2/3] benchmark scoreboard - absolute targets gate the exit code;"
+echo ">> [2/4] benchmark scoreboard - absolute targets gate the exit code;"
 echo "         allow-p99 spread is informational here (a container/shared host"
 echo "         measures the environment, not the system - run natively with a"
 echo "         pinned CPU governor for the dedicated-hardware spread claim)"
 "$PY" bench/run_bench.py --spread-report-only
 
 echo ""
-echo ">> [3/3] evidence pack (make evidence)"
+echo ">> [3/4] EAG-Bench EIGS-100 scoreboard (benchmarks/eag_bench/eag.py)"
+echo "         computed from real track runs; exits nonzero on EIGS < 95 or ANY"
+echo "         critical failure. Reproduces the headline governance score + the"
+echo "         self-owned real slice (unscored) in this clean environment."
+"$PY" benchmarks/eag_bench/eag.py
+
+echo ""
+echo ">> [4/4] evidence pack (make evidence)"
 "$PY" scripts/build_evidence.py
 
 echo ""
 echo "=============================================================="
 echo " REPRODUCTION PASSED - tests green, all benchmark targets met,"
-echo " evidence pack regenerated. Compare docs/BENCHMARK.md against the"
-echo " committed capture for this commit."
+echo " EIGS scoreboard recomputed, evidence pack regenerated. This proves"
+echo " the results are REPRODUCIBLE from a clean environment; it is not, by"
+echo " itself, third-party VALIDATION (an independent reviewer critiquing the"
+echo " corpus + labels). Compare docs/BENCHMARK.md and docs/EAG_BENCH.md"
+echo " against the committed captures for this commit."
 echo "=============================================================="
