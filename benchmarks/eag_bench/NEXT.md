@@ -17,12 +17,16 @@ The `source: real | anonymized` field and `provenance` block already exist; the 
 **source-agnostic**, so real cases flow through the same 0-escape check — no harness change needed.
 The work is *safe ingestion*, not new evaluation logic.
 
-**Build first — the safety rail** (before any real data lands):
-- `deid.py` reusing `verdictplane.interceptor.redact` (already masks secrets) to strip PII/secrets from
-  `arguments`, plus identifier→synthetic-token replacement.
-- a secret/PII scan wired as a **hard pipeline gate**: the ingest step itself **rejects** (non-zero
-  exit, no file written) any record that trips the scan — plus a CI test over `source != synthetic`
-  cases. Privacy fails the pipeline, it does not warn.
+**Safety rail — ✅ SHIPPED** (`benchmarks/eag_bench/deid.py`, `tests/test_deid.py`, 230 tests):
+- de-identify reuses `verdictplane.interceptor.redact` (masks secret-named keys) + PII pattern scrub
+  (email, IPv4, SSN, card, AWS key, private key, JWT) on carrier fields.
+- **hard gate:** re-scans the WHOLE record; any residual secret/PII → the ingest CLI **rejects**
+  (non-zero exit, no file written), and output is force-tagged `source: anonymized` (never `real`).
+  CLI: `python benchmarks/eag_bench/deid.py <in.json ...> --out <dir>`.
+
+**Next: Wave-1 ingestion** — map ToolBench/WebArena trajectories → action cases, run each through
+`deid.py`, schema-validate, then `make enterprise-bench` (harness is source-agnostic). Verify each
+dataset's licence at ingest.
 
 **Then:** small `provenance` additions (`origin`, `deid_method`, `license`); a de-identification
 checklist (strip secrets/PII, tokenise identifiers, drop free-text, verify no real credentials,
