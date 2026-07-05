@@ -20,7 +20,9 @@ The work is *safe ingestion*, not new evaluation logic.
 **Build first — the safety rail** (before any real data lands):
 - `deid.py` reusing `verdictplane.interceptor.redact` (already masks secrets) to strip PII/secrets from
   `arguments`, plus identifier→synthetic-token replacement.
-- a test that scans every `source != synthetic` case for secret/PII patterns and **fails** if any leak.
+- a secret/PII scan wired as a **hard pipeline gate**: the ingest step itself **rejects** (non-zero
+  exit, no file written) any record that trips the scan — plus a CI test over `source != synthetic`
+  cases. Privacy fails the pipeline, it does not warn.
 
 **Then:** small `provenance` additions (`origin`, `deid_method`, `license`); a de-identification
 checklist (strip secrets/PII, tokenise identifiers, drop free-text, verify no real credentials,
