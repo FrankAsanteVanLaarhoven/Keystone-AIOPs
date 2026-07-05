@@ -30,9 +30,32 @@ VerdictPlane's *enterprise action* policy independently routes production model-
 Zero unapproved side effects. This reports real action shapes + policy-derived verdicts; it does not
 claim DriftGuard's gate "should" have decided differently.
 
-### Honest scope
+## `sentinel_incidents.jsonl`
 
-Small (2 real decisions) and single-domain (model promotion) — a genuine first real-data point, **not**
-a corpus. Grow it as more self-owned governed actions accrue (further DriftGuard runs, Sentinel logs,
-real VerdictPlane deployments). Locked into `make test` (`tests/test_replay.py`) so the real result
-stays reproducible.
+Source: Sentinel-AIOPs (self-owned; `/home/favl/Sentinel-AIOPs`), which is built on the same contract —
+*Sentinel proposes, VerdictPlane governs*. Generated through Sentinel's **own** code:
+`action_proposal.build_action_proposal(<flag_spike incident>)` → `verdictplane.proposal_to_action(...)`
+(not hand-authored). The `flag_spike` incident (a checkout deploy spiking p95 120→940ms) is Sentinel's
+canonical investigation fixture.
+
+- proposal `rollback_change` → VerdictPlane action `incident.rollback` / `execute` (checkout,
+  `deploy checkout@v128`, confidence 0.91, grounding 1.0). No PII/secrets.
+
+### Result
+
+```
+replayed 1/1 real action — verdict distribution {require_human: 1} — escapes 0
+```
+
+VerdictPlane routes the remediation to **human approval** — consistent with the cross-layer story: a
+consequential mutation (rollback) is not auto-executed. A second real system + a second domain
+(incident remediation, not just model promotion).
+
+## Honest scope (both traces)
+
+Small — **3 real actions across 2 self-owned systems (DriftGuard, Sentinel) and 2 domains**, all routed
+to `require_human`, 0 escapes. A genuine early real signal, **not** a corpus. The Sentinel entry uses
+its canonical `flag_spike` fixture (1 action); *richer* Sentinel data (fresh causal RCA over the
+RCAEval RE1 / SMD benchmarks in `Sentinel-AIOPs/engine/artifacts/`) needs its heavier pipeline — a
+bounded follow-up. Locked into `make test` (`tests/test_replay.py`) so the real results stay
+reproducible; surfaced (unscored) in the EIGS scoreboard.

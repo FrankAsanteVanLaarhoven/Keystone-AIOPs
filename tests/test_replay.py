@@ -76,3 +76,12 @@ def test_real_driftguard_trace_replays_cleanly():
     assert rep["replayed"] == 2 and rep["malformed"] == 0 and rep["rejected_by_gate"] == 0
     assert rep["escapes"] == 0
     assert rep["distribution"].get(REQUIRE_HUMAN, 0) == 2
+
+
+def test_real_sentinel_trace_replays_cleanly():
+    """Sentinel's flag_spike remediation (its own proposal_to_action output) → human-gated, 0 escapes."""
+    trace = os.path.join(EAG, "traces", "sentinel_incidents.jsonl")
+    rep = R.run([trace])
+    assert rep["replayed"] == 1 and rep["rejected_by_gate"] == 0
+    assert rep["escapes"] == 0
+    assert rep["distribution"].get(REQUIRE_HUMAN, 0) == 1

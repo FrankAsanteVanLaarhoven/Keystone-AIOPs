@@ -47,9 +47,15 @@ computed from real track runs, canonical roadmap allocation (non-equal by design
 critical-fail gating, T9 gap honest. **EIGS = 98/100, 0 critical** on the current corpus (scoped:
 mostly synthetic + red-team; real slice = early signal, NOT scored). `artifacts/eag.json` gitignored.
 
-**Next:** (a) grow the real slice — **Sentinel logs** (not reachable in this session; point me at the
-path) or a real VP deployment ledger → `replay.py`; (b) close the **T9 gap** — the OTel observability
-exporter (the only missing 2 points), keeping it provably unreachable from enforcement.
+**Real slice now spans 2 self-owned systems** (`traces/`): 2 DriftGuard promotions + 1 Sentinel
+`flag_spike` remediation = **3 real actions, all → require_human, 0 escapes** (surfaced unscored in the
+EIGS scoreboard). Sentinel lives at `/home/favl/Sentinel-AIOPs` and is built on the same
+propose-then-govern contract (its `proposal_to_action` did the mapping).
+
+**Next:** (a) grow the real slice further — Sentinel's *heavier* causal-RCA pipeline over the RCAEval
+RE1 / SMD benchmarks (`Sentinel-AIOPs/engine/artifacts/`) yields fresh investigations (needs its
+stack), or a real VP deployment ledger; (b) close the **T9 gap** — the OTel observability exporter (the
+only missing 2 points), provably unreachable from enforcement.
 
 **Then:** small `provenance` additions (`origin`, `deid_method`, `license`); a de-identification
 checklist (strip secrets/PII, tokenise identifiers, drop free-text, verify no real credentials,

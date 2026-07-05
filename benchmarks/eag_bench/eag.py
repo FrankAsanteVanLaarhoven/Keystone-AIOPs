@@ -201,10 +201,10 @@ def _measure(workdir: str) -> dict:
 
 
 def _real_slice(workdir: str):
-    trace = os.path.join(HERE, "traces", "driftguard_promotions.jsonl")
-    if not os.path.exists(trace):
+    pattern = os.path.join(HERE, "traces", "*.jsonl")
+    if not glob.glob(pattern):
         return None
-    return _mod("eag_replay", "replay.py").run([trace], workdir=os.path.join(workdir, "slice"))
+    return _mod("eag_replay", "replay.py").run([pattern], workdir=os.path.join(workdir, "slice"))
 
 
 def run(workdir: str | None = None) -> dict:
@@ -239,8 +239,9 @@ def render_markdown(report: dict) -> str:
     if s:
         L += ["", "### Early real signal (NOT scored)", "",
               f"Replay of self-owned real traces (`traces/`): {s['replayed']} real action(s), "
-              f"verdict distribution {s['distribution']}, unapproved escapes {s['escapes']}. Small and "
-              "single-domain — a first real data point, deliberately excluded from the score."]
+              f"verdict distribution {s['distribution']}, unapproved escapes {s['escapes']}. Small — "
+              "early signal from self-owned systems (DriftGuard promotions + Sentinel remediation), "
+              "deliberately excluded from the score."]
     return "\n".join(L) + "\n"
 
 

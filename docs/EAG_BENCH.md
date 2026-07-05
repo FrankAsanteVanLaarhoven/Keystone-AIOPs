@@ -40,4 +40,4 @@ Observability export is not built yet, so T9 scores **0/2** — shown, not fudge
 
 ### Early real signal (NOT scored)
 
-Replay of self-owned real traces (`traces/`): 2 real action(s), verdict distribution {'require_human': 2}, unapproved escapes 0. Small and single-domain — a first real data point, deliberately excluded from the score.
+Replay of self-owned real traces (`traces/`): 3 real action(s), verdict distribution {'require_human': 3}, unapproved escapes 0. Small — early signal from self-owned systems (DriftGuard promotions + Sentinel remediation), deliberately excluded from the score.
