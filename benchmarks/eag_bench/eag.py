@@ -165,6 +165,30 @@ def _enforcement_imports_ml() -> bool:
     return False
 
 
+def _observability(workdir: str) -> dict:
+    """T9: the exporter must round-trip AND be provably unreachable from the enforcement path."""
+    import verdictplane.observability as obs
+
+    led = Ledger(path=None)
+    led.append({"action": {"tool": "x", "effect": "write", "args": {}, "agent": "svc"},
+                "decision": "allow", "outcome": "executed"})
+    recs = obs.export(led.entries())
+    implemented = len(recs) == 1 and recs[0]["attributes"]["governance.tool"] == "x"
+
+    # reachable iff any ENFORCEMENT module even mentions observability (conservative: any hit = critical)
+    off_path = {"observability.py", "advisory.py", "cli.py"}
+    pat = re.compile(r"\bobservability\b")
+    reachable = False
+    for f in glob.glob(os.path.join(ROOT, "src", "verdictplane", "*.py")):
+        if os.path.basename(f) in off_path:
+            continue
+        with open(f) as fh:
+            if pat.search(fh.read()):
+                reachable = True
+                break
+    return {"implemented": implemented, "reachable_from_enforcement": reachable}
+
+
 def _measure(workdir: str) -> dict:
     from verdictplane.policy import load_policy
     H = _mod("eag_harness", "harness.py")
@@ -195,7 +219,7 @@ def _measure(workdir: str) -> dict:
         "t8": {"total": len(quorum), "ok": sum(1 for _c, r in quorum if r["verdict_ok"] and not r["escaped"]),
                "partial_exec": sum(1 for _c, r in quorum if r["escaped"])},
         "t6": _durability(os.path.join(workdir, "dur")),
-        "t9": {"implemented": False, "reachable_from_enforcement": False},
+        "t9": _observability(workdir),
         "model_import_in_enforcement": _enforcement_imports_ml(),
     }
 
@@ -221,7 +245,8 @@ def render_markdown(report: dict) -> str:
          "> one in [`ROADMAP_V0.2.md`](ROADMAP_V0.2.md) §4 — non-equal **by design**: the",
          "> side-effect-escape safety track dominates. Scored on the current corpus (mostly synthetic +",
          "> red-team). The real slice below is **early real signal**, deliberately **not** part of the",
-         "> 100. Internal self-assessment — not externally reproduced.", "",
+         "> 100. Internal self-assessment — not externally reproduced. A full 100 means every *defined*",
+         "> track passed on *this* corpus — not that governance is complete or externally validated.", "",
          f"## EIGS = {report['total']} / 100 — {'PASS' if report['passed'] else 'FAIL'}",
          f"(threshold {report['threshold']}; {len(report['critical_failures'])} critical failures)", "",
          "| Track | Points | Max |", "| --- | ---: | ---: |"]
@@ -234,8 +259,15 @@ def render_markdown(report: dict) -> str:
         L += ["", "### Critical failures this run", ""] + [f"- {c}" for c in report["critical_failures"]]
     else:
         L += ["", "_No critical failures this run._"]
-    L += ["", "### T9 gap (honest)", "",
-          "Observability export is not built yet, so T9 scores **0/2** — shown, not fudged."]
+    t9 = report["tracks"].get("T9_observability_export", 0)
+    if t9:
+        L += ["", "### T9 (observability export)", "",
+              f"OTel exporter shipped, scores **{t9}/2**: governance events round-trip to OTel records, "
+              "and the enforcement path is **statically proven never to import it** (so an exporter "
+              "failure cannot affect a decision, and enforcement stays zero-egress)."]
+    else:
+        L += ["", "### T9 gap (honest)", "",
+              "Observability export is not built yet, so T9 scores **0/2** — shown, not fudged."]
     if s:
         L += ["", "### Early real signal (NOT scored)", "",
               f"Replay of self-owned real traces (`traces/`): {s['replayed']} real action(s), "

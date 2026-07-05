@@ -34,8 +34,9 @@ Framed as an **open, standard-setting benchmark** for pre-execution action gover
    ([`traces/`](traces/README.md)) → `{require_human: 2}`, 0 escapes, in `make test`.
 8. **EIGS-100 scoring** — ✅ **shipped** (`make eag` → [`../../docs/EAG_BENCH.md`](../../docs/EAG_BENCH.md)):
    computed from real track runs (not hardcoded), canonical roadmap allocation, explicit critical-fail
-   gating, T9 gap scored 0 honestly. **EIGS = 98/100, 0 critical** on the current corpus (scoped:
-   mostly synthetic + red-team; the real slice is early signal, not scored).
+   gating, every point tied to a measured result. **EIGS = 100/100, 0 critical** on the current corpus
+   (scoped: mostly synthetic + red-team; the real slice is early signal, not scored). T9 = an off-path
+   OTel exporter (`verdictplane.observability`) proven unreachable from enforcement.
 
 ## Status & layout
 

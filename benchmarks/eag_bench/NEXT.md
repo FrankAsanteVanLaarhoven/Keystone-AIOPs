@@ -44,18 +44,23 @@ routes prod promotions to dual-control approval. Real action shapes, policy-deri
 
 **EIGS-100 scoring — ✅ SHIPPED** (`benchmarks/eag_bench/eag.py`, `make eag` → `docs/EAG_BENCH.md`):
 computed from real track runs, canonical roadmap allocation (non-equal by design), explicit
-critical-fail gating, T9 gap honest. **EIGS = 98/100, 0 critical** on the current corpus (scoped:
-mostly synthetic + red-team; real slice = early signal, NOT scored). `artifacts/eag.json` gitignored.
+critical-fail gating, every point tied to a measured result. **EIGS = 100/100, 0 critical** on the
+current corpus (scoped: mostly synthetic + red-team; real slice = early signal, NOT scored).
+`artifacts/eag.json` gitignored. **T9 closed** — `verdictplane.observability` is an off-path OTel
+exporter (governance events → OTel records) proven unreachable from enforcement (same static guard as
+advisory/cli), so an exporter failure can't affect a decision and enforcement stays zero-egress.
 
 **Real slice now spans 2 self-owned systems** (`traces/`): 2 DriftGuard promotions + 1 Sentinel
 `flag_spike` remediation = **3 real actions, all → require_human, 0 escapes** (surfaced unscored in the
 EIGS scoreboard). Sentinel lives at `/home/favl/Sentinel-AIOPs` and is built on the same
 propose-then-govern contract (its `proposal_to_action` did the mapping).
 
-**Next:** (a) grow the real slice further — Sentinel's *heavier* causal-RCA pipeline over the RCAEval
-RE1 / SMD benchmarks (`Sentinel-AIOPs/engine/artifacts/`) yields fresh investigations (needs its
-stack), or a real VP deployment ledger; (b) close the **T9 gap** — the OTel observability exporter (the
-only missing 2 points), provably unreachable from enforcement.
+**Next (EIGS is now gap-free at 100/100 — remaining work raises *epistemic* weight, not the score):**
+(a) grow the real slice — Sentinel's heavier causal-RCA pipeline over RCAEval RE1 / SMD (fresh
+investigations; needs its stack), the AetherForge `execution_traces.jsonl`, or a real VP deployment
+ledger; (b) **external reproduction** — the single biggest credibility lever left: an independent
+repro kit so the 100/100 is not just an internal self-assessment (per the review gate, no "beats X"
+until then).
 
 **Then:** small `provenance` additions (`origin`, `deid_method`, `license`); a de-identification
 checklist (strip secrets/PII, tokenise identifiers, drop free-text, verify no real credentials,

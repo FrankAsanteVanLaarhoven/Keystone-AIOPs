@@ -13,8 +13,8 @@ import pytest
 
 SRC = os.path.join(os.path.dirname(__file__), "..", "src", "verdictplane")
 
-# Off-hot-path modules, allowed to talk to models/CLIs (still zero-egress by default).
-NON_ENFORCEMENT = {"advisory.py", "cli.py"}
+# Off-hot-path modules, allowed to talk to models/CLIs/collectors (still zero-egress by default).
+NON_ENFORCEMENT = {"advisory.py", "cli.py", "observability.py"}
 
 ALLOWED_IMPORTS = {
     # stdlib, deterministic, no network
@@ -77,8 +77,12 @@ def test_enforcement_set_is_not_empty():
 
 
 @pytest.mark.parametrize("module", enforcement_modules())
-def test_enforcement_never_imports_advisory_or_cli(module):
-    """The intra-package allowlist must not smuggle the off-path modules in."""
+def test_enforcement_never_imports_off_path_modules(module):
+    """The intra-package allowlist must not smuggle the off-path modules in.
+
+    This is also the T9 guarantee: `observability` (the OTel exporter) is provably unreachable from
+    the enforcement path, so an exporter failure can never affect a governance decision.
+    """
     with open(os.path.join(SRC, module)) as f:
         tree = ast.parse(f.read())
     for node in ast.walk(tree):
@@ -87,6 +91,6 @@ def test_enforcement_never_imports_advisory_or_cli(module):
             if isinstance(node, ast.ImportFrom) and node.module:
                 referenced.append(node.module)
             for name in referenced:
-                assert "advisory" not in name and name != "cli", (
+                assert "advisory" not in name and name != "cli" and "observability" not in name, (
                     f"{module} imports off-hot-path module {name!r}"
                 )
