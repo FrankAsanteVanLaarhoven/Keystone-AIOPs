@@ -36,9 +36,15 @@ shapes in, policy-derived verdicts out, zero fabricated scaffolding. Every actio
 (PII in an actor id → rejected, never governed) BEFORE replay.
 CLI: `python benchmarks/eag_bench/replay.py <trace.jsonl ...>` (ledger records or bare actions).
 
-**Next: feed a real self-owned trace** — a VerdictPlane ledger (or DriftGuard/Sentinel action log)
-from *actual* usage, run `replay.py`, and report the real verdict distribution + 0 escapes. This is the
-data **you** generate through real usage; the pipeline is turnkey and awaits it.
+**First real trace — ✅ INGESTED** (`traces/driftguard_promotions.jsonl` + `traces/README.md`): 2 real
+production model-promotion decisions from DriftGuard's measured runs (ag_news 2026-07-01, distilbert
+2026-07-02). Replayed → **{require_human: 2}, 0 escapes** (locked into `make test`). The cross-layer
+story: DriftGuard's *ML* gate passed both on quality; VerdictPlane's *action* policy independently
+routes prod promotions to dual-control approval. Real action shapes, policy-derived verdicts.
+
+**Next:** grow real traces as usage accrues (more DriftGuard runs, Sentinel logs, real VP deployments),
+then **EIGS-100 scoring** over the corpus + red-team + this real slice (scoped: mostly synthetic + a
+small real slice).
 
 **Then:** small `provenance` additions (`origin`, `deid_method`, `license`); a de-identification
 checklist (strip secrets/PII, tokenise identifiers, drop free-text, verify no real credentials,

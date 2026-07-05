@@ -30,7 +30,8 @@ Framed as an **open, standard-setting benchmark** for pre-execution action gover
 7. **Real traces (self-owned).** De-identification safety rail — ✅ **shipped** (`deid.py`, hard gate:
    reject on residual PII, never `real`). Real-action **replay track** — ✅ **shipped** (`replay.py`:
    replay captured actions through `govern()`, report verdict distribution + 0 escapes, no fabricated
-   scaffolding). Next: feed a real self-owned ledger from actual usage.
+   scaffolding). First real trace ✅ **ingested** — 2 real DriftGuard prod promotions
+   ([`traces/`](traces/README.md)) → `{require_human: 2}`, 0 escapes, in `make test`.
 8. **EIGS-100 scoring only after the corpus + harness are stable.**
 
 ## Status & layout

@@ -66,3 +66,13 @@ def test_pii_in_actor_id_is_rejected():
     ok, _clean, residual = R.deid_action({"tool": "mail.send", "args": {}, "agent": "alice@corp.com"})
     assert not ok
     assert any(k == "email" for _, k, _ in residual)
+
+
+def test_real_driftguard_trace_replays_cleanly():
+    """The committed self-owned real trace (2 DriftGuard prod promotions) must stay reproducible:
+    both routed to dual-control human approval, zero unapproved side effects."""
+    trace = os.path.join(EAG, "traces", "driftguard_promotions.jsonl")
+    rep = R.run([trace])
+    assert rep["replayed"] == 2 and rep["malformed"] == 0 and rep["rejected_by_gate"] == 0
+    assert rep["escapes"] == 0
+    assert rep["distribution"].get(REQUIRE_HUMAN, 0) == 2
