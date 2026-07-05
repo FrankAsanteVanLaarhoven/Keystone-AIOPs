@@ -41,8 +41,21 @@ must be scoped as such until real traces + external repro exist.
 **Real traces first** (biggest credibility lever), starting with the de-id safety rail. Do EIGS-100
 after, so the headline score reflects a partly-real corpus rather than a purely synthetic one.
 
-## Open questions for the next session
-- Which real-log source is licence-clean and available (public agent/tool-call datasets? self-owned
-  pilot logs with consent?).
-- Target size of the first real/anonymized batch (keep small; quality + provenance over volume).
+## Sourcing plan (decided)
+
+**Wave 1 — public, licence-clean agent/tool-use datasets** (build the pipeline + privacy gate here):
+prioritise **ToolBench/ToolEval** and **WebArena** (further candidates: GAIA, AgentBench). Extract
+consequential actions from the trajectories → action cases tagged `source: anonymized`.
+- **Verify each dataset's licence at ingest — do NOT assume "open".** Record it in `provenance.license`.
+
+**Wave 2 (later)** — self-owned / consented logs (VerdictPlane / DriftGuard / Sentinel usage; pilot
+data with explicit consent). Higher credibility; only after the de-id gate is proven on public data.
+
+**Honest scope caveat (important):** these datasets supply real *action distributions / shapes*, not
+real enterprise *governance decisions* — the `expected_verdict` stays policy-derived. So the upgrade is
+"real actions, synthetic labels", tagged `source: anonymized` (never `real`); do not claim "real
+governance data".
+
+## Still open for the next session
+- Target size of the first anonymized batch (keep small; provenance/quality over volume).
 - EIGS-100 weights — adopt the roadmap's or revisit.
